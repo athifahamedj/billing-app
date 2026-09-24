@@ -5,4 +5,4 @@ app = FastAPI()
 
 @app.get("/")
 def root():
-    return {"message": "Motor Spares API is running"}
+    return {"message": "Billing App API is running"}
