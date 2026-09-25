@@ -1,0 +1,122 @@
+[
+  {
+    "id": "CUS001",
+    "name": "Ravi Auto Care",
+    "customerType": "Workshop",
+    "phone": "9876501001",
+    "email": "",
+    "address": "Medavakkam, Chennai",
+    "gstin": "",
+    "creditLimit": 15000,
+    "outstandingAmount": 3250,
+    "status": "Active"
+  },
+  {
+    "id": "CUS002",
+    "name": "Kumar Auto Electricals",
+    "customerType": "Auto Electrical",
+    "phone": "9876501002",
+    "email": "",
+    "address": "Pallikaranai, Chennai",
+    "gstin": "",
+    "creditLimit": 20000,
+    "outstandingAmount": 1800,
+    "status": "Active"
+  },
+  {
+    "id": "CUS003",
+    "name": "Suresh",
+    "customerType": "Car Owner",
+    "phone": "9876501003",
+    "email": "",
+    "address": "Tambaram, Chennai",
+    "gstin": "",
+    "creditLimit": 0,
+    "outstandingAmount": 0,
+    "status": "Active"
+  },
+  {
+    "id": "CUS004",
+    "name": "Sri Lakshmi Auto Works",
+    "customerType": "Workshop",
+    "phone": "9876501004",
+    "email": "",
+    "address": "Keelkattalai, Chennai",
+    "gstin": "",
+    "creditLimit": 25000,
+    "outstandingAmount": 7250,
+    "status": "Active"
+  },
+  {
+    "id": "CUS005",
+    "name": "Arun",
+    "customerType": "Car Owner",
+    "phone": "9876501005",
+    "email": "",
+    "address": "Madipakkam, Chennai",
+    "gstin": "",
+    "creditLimit": 0,
+    "outstandingAmount": 0,
+    "status": "Active"
+  },
+  {
+    "id": "CUS006",
+    "name": "Metro Car Care",
+    "customerType": "Workshop",
+    "phone": "9876501006",
+    "email": "",
+    "address": "Velachery, Chennai",
+    "gstin": "",
+    "creditLimit": 30000,
+    "outstandingAmount": 5400,
+    "status": "Active"
+  },
+  {
+    "id": "CUS007",
+    "name": "Mohammed Irfan",
+    "customerType": "Car Owner",
+    "phone": "9876501007",
+    "email": "",
+    "address": "Chromepet, Chennai",
+    "gstin": "",
+    "creditLimit": 0,
+    "outstandingAmount": 0,
+    "status": "Active"
+  },
+  {
+    "id": "CUS008",
+    "name": "Classic Auto Garage",
+    "customerType": "Workshop",
+    "phone": "9876501008",
+    "email": "",
+    "address": "Sholinganallur, Chennai",
+    "gstin": "",
+    "creditLimit": 20000,
+    "outstandingAmount": 4100,
+    "status": "Active"
+  },
+  {
+    "id": "CUS009",
+    "name": "Prakash",
+    "customerType": "Car Owner",
+    "phone": "9876501009",
+    "email": "",
+    "address": "Perungalathur, Chennai",
+    "gstin": "",
+    "creditLimit": 0,
+    "outstandingAmount": 0,
+    "status": "Active"
+  },
+  {
+    "id": "CUS010",
+    "name": "Sai Motors Garage",
+    "customerType": "Workshop",
+    "phone": "9876501010",
+    "email": "",
+    "address": "Guindy, Chennai",
+    "gstin": "",
+    "creditLimit": 25000,
+    "outstandingAmount": 8900,
+    "status": "Active"
+  }
+]

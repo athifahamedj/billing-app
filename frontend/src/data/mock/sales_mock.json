@@ -1,0 +1,331 @@
+[
+  {
+    "id": "SAL001",
+    "invoiceNumber": "INV-0001",
+    "date": "2026-09-18",
+    "customerId": "CUS001",
+    "items": [
+      {
+        "productId": "PRD004",
+        "quantity": 1,
+        "unitPrice": 1650
+      },
+      {
+        "productId": "PRD017",
+        "quantity": 2,
+        "unitPrice": 250
+      }
+    ],
+    "subtotal": 2150,
+    "discount": 100,
+    "taxableAmount": 2050,
+    "gstRate": 18,
+    "gstAmount": 369,
+    "totalAmount": 2419,
+    "paymentMethod": "Credit",
+    "paymentStatus": "Pending",
+    "status": "Completed"
+  },
+  {
+    "id": "SAL002",
+    "invoiceNumber": "INV-0002",
+    "date": "2026-09-18",
+    "customerId": "CUS003",
+    "items": [
+      {
+        "productId": "PRD001",
+        "quantity": 1,
+        "unitPrice": 240
+      },
+      {
+        "productId": "PRD002",
+        "quantity": 1,
+        "unitPrice": 425
+      }
+    ],
+    "subtotal": 665,
+    "discount": 0,
+    "taxableAmount": 665,
+    "gstRate": 18,
+    "gstAmount": 119.7,
+    "totalAmount": 784.7,
+    "paymentMethod": "UPI",
+    "paymentStatus": "Paid",
+    "status": "Completed"
+  },
+  {
+    "id": "SAL003",
+    "invoiceNumber": "INV-0003",
+    "date": "2026-09-19",
+    "customerId": "CUS002",
+    "items": [
+      {
+        "productId": "PRD014",
+        "quantity": 1,
+        "unitPrice": 1850
+      },
+      {
+        "productId": "PRD016",
+        "quantity": 1,
+        "unitPrice": 580
+      }
+    ],
+    "subtotal": 2430,
+    "discount": 50,
+    "taxableAmount": 2380,
+    "gstRate": 18,
+    "gstAmount": 428.4,
+    "totalAmount": 2808.4,
+    "paymentMethod": "Credit",
+    "paymentStatus": "Pending",
+    "status": "Completed"
+  },
+  {
+    "id": "SAL004",
+    "invoiceNumber": "INV-0004",
+    "date": "2026-09-19",
+    "customerId": "CUS004",
+    "items": [
+      {
+        "productId": "PRD006",
+        "quantity": 1,
+        "unitPrice": 2950
+      },
+      {
+        "productId": "PRD007",
+        "quantity": 1,
+        "unitPrice": 900
+      }
+    ],
+    "subtotal": 3850,
+    "discount": 150,
+    "taxableAmount": 3700,
+    "gstRate": 18,
+    "gstAmount": 666,
+    "totalAmount": 4366,
+    "paymentMethod": "Credit",
+    "paymentStatus": "Pending",
+    "status": "Completed"
+  },
+  {
+    "id": "SAL005",
+    "invoiceNumber": "INV-0005",
+    "date": "2026-09-20",
+    "customerId": "CUS005",
+    "items": [
+      {
+        "productId": "PRD019",
+        "quantity": 2,
+        "unitPrice": 425
+      },
+      {
+        "productId": "PRD030",
+        "quantity": 2,
+        "unitPrice": 225
+      }
+    ],
+    "subtotal": 1300,
+    "discount": 0,
+    "taxableAmount": 1300,
+    "gstRate": 18,
+    "gstAmount": 234,
+    "totalAmount": 1534,
+    "paymentMethod": "Cash",
+    "paymentStatus": "Paid",
+    "status": "Completed"
+  },
+  {
+    "id": "SAL006",
+    "invoiceNumber": "INV-0006",
+    "date": "2026-09-20",
+    "customerId": "CUS006",
+    "items": [
+      {
+        "productId": "PRD020",
+        "quantity": 1,
+        "unitPrice": 2350
+      },
+      {
+        "productId": "PRD022",
+        "quantity": 1,
+        "unitPrice": 1900
+      }
+    ],
+    "subtotal": 4250,
+    "discount": 100,
+    "taxableAmount": 4150,
+    "gstRate": 18,
+    "gstAmount": 747,
+    "totalAmount": 4897,
+    "paymentMethod": "UPI",
+    "paymentStatus": "Paid",
+    "status": "Completed"
+  },
+  {
+    "id": "SAL007",
+    "invoiceNumber": "INV-0007",
+    "date": "2026-09-21",
+    "customerId": "CUS007",
+    "items": [
+      {
+        "productId": "PRD015",
+        "quantity": 1,
+        "unitPrice": 4950
+      },
+      {
+        "productId": "PRD017",
+        "quantity": 1,
+        "unitPrice": 250
+      }
+    ],
+    "subtotal": 5200,
+    "discount": 0,
+    "taxableAmount": 5200,
+    "gstRate": 18,
+    "gstAmount": 936,
+    "totalAmount": 6136,
+    "paymentMethod": "Card",
+    "paymentStatus": "Paid",
+    "status": "Completed"
+  },
+  {
+    "id": "SAL008",
+    "invoiceNumber": "INV-0008",
+    "date": "2026-09-21",
+    "customerId": "CUS008",
+    "items": [
+      {
+        "productId": "PRD005",
+        "quantity": 1,
+        "unitPrice": 1150
+      },
+      {
+        "productId": "PRD024",
+        "quantity": 2,
+        "unitPrice": 700
+      }
+    ],
+    "subtotal": 2550,
+    "discount": 75,
+    "taxableAmount": 2475,
+    "gstRate": 18,
+    "gstAmount": 445.5,
+    "totalAmount": 2920.5,
+    "paymentMethod": "Credit",
+    "paymentStatus": "Pending",
+    "status": "Completed"
+  },
+  {
+    "id": "SAL009",
+    "invoiceNumber": "INV-0009",
+    "date": "2026-09-22",
+    "customerId": "CUS009",
+    "items": [
+      {
+        "productId": "PRD013",
+        "quantity": 4,
+        "unitPrice": 160
+      },
+      {
+        "productId": "PRD023",
+        "quantity": 1,
+        "unitPrice": 250
+      }
+    ],
+    "subtotal": 890,
+    "discount": 0,
+    "taxableAmount": 890,
+    "gstRate": 18,
+    "gstAmount": 160.2,
+    "totalAmount": 1050.2,
+    "paymentMethod": "Cash",
+    "paymentStatus": "Paid",
+    "status": "Completed"
+  },
+  {
+    "id": "SAL010",
+    "invoiceNumber": "INV-0010",
+    "date": "2026-09-22",
+    "customerId": "CUS010",
+    "items": [
+      {
+        "productId": "PRD009",
+        "quantity": 1,
+        "unitPrice": 690
+      },
+      {
+        "productId": "PRD011",
+        "quantity": 1,
+        "unitPrice": 520
+      },
+      {
+        "productId": "PRD012",
+        "quantity": 1,
+        "unitPrice": 820
+      }
+    ],
+    "subtotal": 2030,
+    "discount": 50,
+    "taxableAmount": 1980,
+    "gstRate": 18,
+    "gstAmount": 356.4,
+    "totalAmount": 2336.4,
+    "paymentMethod": "Credit",
+    "paymentStatus": "Pending",
+    "status": "Completed"
+  },
+  {
+    "id": "SAL011",
+    "invoiceNumber": "INV-0011",
+    "date": "2026-09-23",
+    "customerId": "CUS001",
+    "items": [
+      {
+        "productId": "PRD025",
+        "quantity": 2,
+        "unitPrice": 650
+      },
+      {
+        "productId": "PRD029",
+        "quantity": 1,
+        "unitPrice": 850
+      }
+    ],
+    "subtotal": 2150,
+    "discount": 50,
+    "taxableAmount": 2100,
+    "gstRate": 18,
+    "gstAmount": 378,
+    "totalAmount": 2478,
+    "paymentMethod": "UPI",
+    "paymentStatus": "Paid",
+    "status": "Completed"
+  },
+  {
+    "id": "SAL012",
+    "invoiceNumber": "INV-0012",
+    "date": "2026-09-23",
+    "customerId": "CUS004",
+    "items": [
+      {
+        "productId": "PRD010",
+        "quantity": 1,
+        "unitPrice": 3650
+      },
+      {
+        "productId": "PRD026",
+        "quantity": 1,
+        "unitPrice": 1450
+      }
+    ],
+    "subtotal": 5100,
+    "discount": 200,
+    "taxableAmount": 4900,
+    "gstRate": 18,
+    "gstAmount": 882,
+    "totalAmount": 5782,
+    "paymentMethod": "Credit",
+    "paymentStatus": "Pending",
+    "status": "Completed"
+  }
+]

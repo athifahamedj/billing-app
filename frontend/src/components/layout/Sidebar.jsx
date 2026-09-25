@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   LayoutDashboard,
   Receipt,
@@ -6,83 +7,106 @@ import {
   Users,
   Truck,
   BarChart3,
-  Settings,
+  ChevronUp,
 } from "lucide-react";
+import { NavLink } from "react-router-dom";
 
-const mainMenu = [
-  { label: "Dashboard", icon: LayoutDashboard },
-  { label: "Sales", icon: Receipt },
-  { label: "Purchases", icon: ShoppingCart },
-  { label: "Inventory", icon: Package },
-  { label: "Customers", icon: Users },
-  { label: "Suppliers", icon: Truck },
-  { label: "Reports", icon: BarChart3 },
+import BusinessMenu from "../../components/layout/BusinessMenu";
+
+const menuItems = [
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { label: "Sales", path: "/sales", icon: Receipt },
+  { label: "Purchases", path: "/purchases", icon: ShoppingCart },
+  { label: "Inventory", path: "/inventory", icon: Package },
+  { label: "Customers", path: "/customers", icon: Users },
+  { label: "Suppliers", path: "/suppliers", icon: Truck },
+  { label: "Reports", path: "/reports", icon: BarChart3 },
 ];
 
 function Sidebar() {
+  const [isBusinessMenuOpen, setIsBusinessMenuOpen] = useState(false);
+
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col bg-slate-950 text-slate-300">
-      
+    <aside className="relative flex h-screen w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
       {/* Brand */}
-      <div className="flex h-20 items-center border-b border-slate-800 px-6">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight text-white">
-            Billing App
-          </h1>
-          <p className="mt-0.5 text-xs text-slate-500">
-            Business Management
-          </p>
+      <button
+        type="button"
+        onClick={() => setIsBusinessMenuOpen((current) => !current)}
+        className="flex h-16 w-full items-center justify-between border-b border-slate-200 px-5 text-left transition hover:bg-slate-50"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-sm font-bold text-white">
+            B
+          </div>
+
+          <div>
+            <h1 className="text-sm font-semibold text-slate-900">
+              Manar Motors
+            </h1>
+
+            <p className="text-[11px] text-slate-400">
+              Business management
+            </p>
+          </div>
         </div>
-      </div>
+
+        <ChevronUp
+          size={16}
+          strokeWidth={1.7}
+          className={`text-slate-400 transition-transform ${
+            isBusinessMenuOpen ? "rotate-180" : ""
+          }`}
+        />
+      </button>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-6">
-        <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-          Main Menu
+      <nav className="flex-1 px-3 py-5">
+        <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+          Menu
         </p>
 
         <div className="space-y-1">
-          {mainMenu.map((item, index) => {
+          {menuItems.map((item) => {
             const Icon = item.icon;
-            const active = index === 0;
 
             return (
-              <button
+              <NavLink
                 key={item.label}
-                className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                  active
-                    ? "bg-white/10 text-white"
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
-                }`}
+                to={item.path}
+                className={({ isActive }) =>
+                  `relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition ${
+                    isActive
+                      ? "bg-slate-100 font-medium text-slate-900"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  }`
+                }
               >
-                <Icon
-                  size={19}
-                  strokeWidth={active ? 2 : 1.8}
-                  className={
-                    active
-                      ? "text-white"
-                      : "text-slate-500 group-hover:text-slate-300"
-                  }
-                />
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <span className="absolute left-0 h-5 w-0.5 rounded-full bg-slate-900" />
+                    )}
 
-                <span>{item.label}</span>
-              </button>
+                    <Icon
+                      size={18}
+                      strokeWidth={isActive ? 2 : 1.7}
+                    />
+
+                    <span>{item.label}</span>
+                  </>
+                )}
+              </NavLink>
             );
           })}
         </div>
       </nav>
 
-      {/* Settings */}
-      <div className="border-t border-slate-800 p-3">
-        <button className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white">
-          <Settings
-            size={19}
-            strokeWidth={1.8}
-            className="text-slate-500 group-hover:text-slate-300"
-          />
-          <span>Settings</span>
-        </button>
-      </div>
+      {/* Business menu */}
+      {isBusinessMenuOpen && (
+        <BusinessMenu
+          onClose={() => setIsBusinessMenuOpen(false)}
+        />
+      )}
     </aside>
   );
 }

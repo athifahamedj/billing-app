@@ -1,0 +1,240 @@
+[
+  {
+    "id": "PUR001",
+    "invoiceNumber": "PINV-0001",
+    "date": "2026-09-10",
+    "supplierId": "SUP002",
+    "items": [
+      {
+        "productId": "PRD004",
+        "quantity": 10,
+        "unitPrice": 1250
+      },
+      {
+        "productId": "PRD005",
+        "quantity": 8,
+        "unitPrice": 850
+      }
+    ],
+    "subtotal": 19300,
+    "discount": 0,
+    "taxableAmount": 19300,
+    "gstRate": 18,
+    "gstAmount": 3474,
+    "totalAmount": 22774,
+    "paymentStatus": "Pending",
+    "status": "Received"
+  },
+  {
+    "id": "PUR002",
+    "invoiceNumber": "PINV-0002",
+    "date": "2026-09-11",
+    "supplierId": "SUP003",
+    "items": [
+      {
+        "productId": "PRD014",
+        "quantity": 4,
+        "unitPrice": 1450
+      },
+      {
+        "productId": "PRD016",
+        "quantity": 10,
+        "unitPrice": 420
+      },
+      {
+        "productId": "PRD029",
+        "quantity": 6,
+        "unitPrice": 620
+      }
+    ],
+    "subtotal": 13720,
+    "discount": 0,
+    "taxableAmount": 13720,
+    "gstRate": 18,
+    "gstAmount": 2469.6,
+    "totalAmount": 16189.6,
+    "paymentStatus": "Pending",
+    "status": "Received"
+  },
+  {
+    "id": "PUR003",
+    "invoiceNumber": "PINV-0003",
+    "date": "2026-09-12",
+    "supplierId": "SUP001",
+    "items": [
+      {
+        "productId": "PRD001",
+        "quantity": 20,
+        "unitPrice": 180
+      },
+      {
+        "productId": "PRD002",
+        "quantity": 10,
+        "unitPrice": 320
+      },
+      {
+        "productId": "PRD003",
+        "quantity": 8,
+        "unitPrice": 420
+      }
+    ],
+    "subtotal": 10160,
+    "discount": 0,
+    "taxableAmount": 10160,
+    "gstRate": 18,
+    "gstAmount": 1828.8,
+    "totalAmount": 11988.8,
+    "paymentStatus": "Paid",
+    "status": "Received"
+  },
+  {
+    "id": "PUR004",
+    "invoiceNumber": "PINV-0004",
+    "date": "2026-09-13",
+    "supplierId": "SUP004",
+    "items": [
+      {
+        "productId": "PRD008",
+        "quantity": 15,
+        "unitPrice": 460
+      },
+      {
+        "productId": "PRD007",
+        "quantity": 8,
+        "unitPrice": 680
+      }
+    ],
+    "subtotal": 12340,
+    "discount": 0,
+    "taxableAmount": 12340,
+    "gstRate": 18,
+    "gstAmount": 2221.2,
+    "totalAmount": 14561.2,
+    "paymentStatus": "Pending",
+    "status": "Received"
+  },
+  {
+    "id": "PUR005",
+    "invoiceNumber": "PINV-0005",
+    "date": "2026-09-15",
+    "supplierId": "SUP005",
+    "items": [
+      {
+        "productId": "PRD006",
+        "quantity": 5,
+        "unitPrice": 2350
+      },
+      {
+        "productId": "PRD023",
+        "quantity": 12,
+        "unitPrice": 180
+      },
+      {
+        "productId": "PRD026",
+        "quantity": 4,
+        "unitPrice": 1100
+      }
+    ],
+    "subtotal": 18310,
+    "discount": 100,
+    "taxableAmount": 18210,
+    "gstRate": 18,
+    "gstAmount": 3277.8,
+    "totalAmount": 21487.8,
+    "paymentStatus": "Pending",
+    "status": "Received"
+  },
+  {
+    "id": "PUR006",
+    "invoiceNumber": "PINV-0006",
+    "date": "2026-09-16",
+    "supplierId": "SUP006",
+    "items": [
+      {
+        "productId": "PRD020",
+        "quantity": 5,
+        "unitPrice": 1850
+      },
+      {
+        "productId": "PRD021",
+        "quantity": 3,
+        "unitPrice": 3850
+      },
+      {
+        "productId": "PRD022",
+        "quantity": 6,
+        "unitPrice": 1450
+      }
+    ],
+    "subtotal": 29500,
+    "discount": 150,
+    "taxableAmount": 29350,
+    "gstRate": 18,
+    "gstAmount": 5283,
+    "totalAmount": 34633,
+    "paymentStatus": "Paid",
+    "status": "Received"
+  },
+  {
+    "id": "PUR007",
+    "invoiceNumber": "PINV-0007",
+    "date": "2026-09-17",
+    "supplierId": "SUP007",
+    "items": [
+      {
+        "productId": "PRD009",
+        "quantity": 10,
+        "unitPrice": 520
+      },
+      {
+        "productId": "PRD010",
+        "quantity": 4,
+        "unitPrice": 2850
+      },
+      {
+        "productId": "PRD019",
+        "quantity": 12,
+        "unitPrice": 310
+      }
+    ],
+    "subtotal": 20320,
+    "discount": 0,
+    "taxableAmount": 20320,
+    "gstRate": 18,
+    "gstAmount": 3657.6,
+    "totalAmount": 23977.6,
+    "paymentStatus": "Pending",
+    "status": "Received"
+  },
+  {
+    "id": "PUR008",
+    "invoiceNumber": "PINV-0008",
+    "date": "2026-09-18",
+    "supplierId": "SUP008",
+    "items": [
+      {
+        "productId": "PRD015",
+        "quantity": 5,
+        "unitPrice": 4200
+      },
+      {
+        "productId": "PRD018",
+        "quantity": 4,
+        "unitPrice": 1350
+      },
+      {
+        "productId": "PRD017",
+        "quantity": 20,
+        "unitPrice": 180
+      }
+    ],
+    "subtotal": 30000,
+    "discount": 0,
+    "taxableAmount": 30000,
+    "gstRate": 18,
+    "gstAmount": 5400,
+    "totalAmount": 35400,
+    "paymentStatus": "Pending",
+    "status": "Received"
+  }
+]
