@@ -1,0 +1,7 @@
+alembic
+fastapi
+psycopg2-binary
+pwdlib[argon2]
+python-dotenv
+sqlalchemy
+uvicorn
