@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "customerId": 2,
+    "date": "2026-09-20",
+    "amount": 1000,
+    "paymentMethod": "UPI",
+    "reference": "UPI-2001",
+    "notes": ""
+  },
+  {
+    "id": 2,
+    "customerId": 3,
+    "date": "2026-09-22",
+    "amount": 500,
+    "paymentMethod": "Cash",
+    "reference": "",
+    "notes": ""
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "business": {
+    "name": "Manar Motors",
+    "phone": "",
+    "address": "",
+    "gstin": "",
+    "invoicePrefix": "INV"
+  },
+  "billing": {
+    "defaultGstRate": 18,
+    "taxMode": "CGST_SGST",
+    "pricesIncludeGst": false,
+    "defaultDiscount": 0
+  },
+  "invoice": {
+    "showGstBreakup": true,
+    "showDiscount": true,
+    "showSavings": true,
+    "showCustomerPhone": true
+  },
+  "inventory": {
+    "lowStockAlerts": true,
+    "defaultReorderLevel": 5,
+    "outOfStockAlerts": true
+  }
+}

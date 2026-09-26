@@ -1,0 +1,98 @@
+[
+  {
+    "id": "SUP001",
+    "name": "Chennai Auto Parts Distributors",
+    "supplierType": "Auto Parts Distributor",
+    "phone": "9886002001",
+    "email": "",
+    "address": "Parrys, Chennai",
+    "gstin": "",
+    "paymentTerms": "30 Days",
+    "outstandingAmount": 18450,
+    "status": "Active"
+  },
+  {
+    "id": "SUP002",
+    "name": "South India Brake Components",
+    "supplierType": "Brake Parts Distributor",
+    "phone": "9886002002",
+    "email": "",
+    "address": "Ambattur, Chennai",
+    "gstin": "",
+    "paymentTerms": "30 Days",
+    "outstandingAmount": 9200,
+    "status": "Active"
+  },
+  {
+    "id": "SUP003",
+    "name": "Metro Auto Electrical Distributors",
+    "supplierType": "Auto Electrical Distributor",
+    "phone": "9886002003",
+    "email": "",
+    "address": "George Town, Chennai",
+    "gstin": "",
+    "paymentTerms": "15 Days",
+    "outstandingAmount": 6750,
+    "status": "Active"
+  },
+  {
+    "id": "SUP004",
+    "name": "Chennai Bearing House",
+    "supplierType": "Bearing Distributor",
+    "phone": "9886002004",
+    "email": "",
+    "address": "Parrys, Chennai",
+    "gstin": "",
+    "paymentTerms": "30 Days",
+    "outstandingAmount": 4200,
+    "status": "Active"
+  },
+  {
+    "id": "SUP005",
+    "name": "South Coast Auto Components",
+    "supplierType": "Auto Parts Distributor",
+    "phone": "9886002005",
+    "email": "",
+    "address": "Guindy, Chennai",
+    "gstin": "",
+    "paymentTerms": "45 Days",
+    "outstandingAmount": 12600,
+    "status": "Active"
+  },
+  {
+    "id": "SUP006",
+    "name": "Prime Car Accessories Wholesale",
+    "supplierType": "Car Accessories Distributor",
+    "phone": "9886002006",
+    "email": "",
+    "address": "Poonamallee, Chennai",
+    "gstin": "",
+    "paymentTerms": "30 Days",
+    "outstandingAmount": 7800,
+    "status": "Active"
+  },
+  {
+    "id": "SUP007",
+    "name": "National Automotive Filters",
+    "supplierType": "Filter Distributor",
+    "phone": "9886002007",
+    "email": "",
+    "address": "Ambattur, Chennai",
+    "gstin": "",
+    "paymentTerms": "30 Days",
+    "outstandingAmount": 5600,
+    "status": "Active"
+  },
+  {
+    "id": "SUP008",
+    "name": "Chennai Tyre & Battery Traders",
+    "supplierType": "Tyre & Battery Distributor",
+    "phone": "9886002008",
+    "email": "",
+    "address": "Porur, Chennai",
+    "gstin": "",
+    "paymentTerms": "15 Days",
+    "outstandingAmount": 11200,
+    "status": "Active"
+  }
+]
