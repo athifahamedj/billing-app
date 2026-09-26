@@ -1,13 +1,6 @@
 import { CreditCard } from "lucide-react";
 
-import settingsMock from "../../../../data/mock/settings_mock.json";
-
-function BillSummary({ subtotal, onCompleteSale }) {
-  const gstRate = settingsMock.billing.defaultGstRate;
-
-  const gstAmount = subtotal * (gstRate / 100);
-  const total = subtotal + gstAmount;
-
+function BillSummary({ subtotal, gstAmount, total, onCompleteSale, disabled }) {
   return (
     <section className="h-fit rounded-lg border border-slate-200 bg-white">
       <div className="border-b border-slate-200 px-5 py-4">
@@ -40,7 +33,7 @@ function BillSummary({ subtotal, onCompleteSale }) {
 
           <div className="flex justify-between">
             <span className="text-slate-500">
-              GST ({gstRate}%)
+              GST
             </span>
 
             <span className="text-slate-900">
@@ -62,13 +55,13 @@ function BillSummary({ subtotal, onCompleteSale }) {
         </div>
 
                 <button
-                type="button"
-                disabled={subtotal === 0}
-                onClick={onCompleteSale}
-                className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-slate-900 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <CreditCard size={17} />
-                Complete Sale
+                  type="button"
+                  disabled={disabled || subtotal === 0}
+                  onClick={onCompleteSale}
+                  className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-slate-900 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <CreditCard size={17} />
+                  Complete Sale
         </button>
       </div>
     </section>

@@ -38,7 +38,8 @@ function ProductSearch({ products, onAddProduct }) {
                   onAddProduct(product);
                   setSearch("");
                 }}
-                className="flex w-full items-center justify-between border-b border-slate-100 px-4 py-3 text-left last:border-0 hover:bg-slate-50"
+                disabled={product.available <= 0}
+                className="flex w-full items-center justify-between border-b border-slate-100 px-4 py-3 text-left last:border-0 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <div>
                   <p className="text-sm font-medium text-slate-800">
@@ -51,7 +52,12 @@ function ProductSearch({ products, onAddProduct }) {
                 </div>
 
                 <span className="text-sm font-medium text-slate-700">
-                  ₹{product.price.toFixed(2)}
+                  <span className="block text-right">
+                    ₹{product.price.toFixed(2)}
+                  </span>
+                  <span className="mt-0.5 block text-right text-xs font-normal text-slate-400">
+                    {product.available} in stock
+                  </span>
                 </span>
               </button>
             ))

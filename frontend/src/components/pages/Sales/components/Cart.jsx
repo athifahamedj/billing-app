@@ -83,7 +83,8 @@ function Cart({ items, onUpdateQuantity, onRemove }) {
                             item.quantity + 1
                           )
                         }
-                        className="p-1.5 text-slate-500 hover:text-slate-900"
+                        disabled={item.quantity >= item.available}
+                        className="p-1.5 text-slate-500 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
                       >
                         <Plus size={14} />
                       </button>

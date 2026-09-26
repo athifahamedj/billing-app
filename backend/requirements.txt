@@ -1,5 +1,6 @@
 alembic
 fastapi
+PyJWT
 psycopg2-binary
 pwdlib[argon2]
 python-dotenv

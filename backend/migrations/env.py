@@ -1,7 +1,21 @@
 from alembic import context
 
 from app.db.database import engine
-from app.models import Base, Shop, User  # noqa: F401
+from app.models import (  # noqa: F401
+    Base,
+    Customer,
+    InventoryMovement,
+    Payment,
+    Product,
+    Purchase,
+    PurchaseItem,
+    Sale,
+    SaleItem,
+    Shop,
+    ShopSetting,
+    Supplier,
+    User,
+)
 
 target_metadata = Base.metadata
 

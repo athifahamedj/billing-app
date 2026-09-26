@@ -1,56 +1,29 @@
-import { useState } from "react";
+import ContactManager from "../shared/ContactManager";
 
-import CustomerToolbar from "./components/CustomerToolbar";
-import CustomerTable from "./components/CustomerTable";
-import CustomerDetails from "./components/CustomerDetails";
-
-import sales from "../../../data/mock/sales_mock.json";
-import initialPayments from "../../../data/mock/customer_payments_mock.json";
+const customerConfig = {
+  title: "Customers",
+  label: "Customer",
+  endpoint: "customers",
+  idField: "customer_id",
+  fields: [
+    { name: "name", label: "Customer name", required: true, maxLength: 200 },
+    { name: "customer_type", label: "Customer type", maxLength: 50 },
+    { name: "phone", label: "Phone", maxLength: 30, autoComplete: "tel" },
+    { name: "email", label: "Email", type: "email", maxLength: 254, autoComplete: "email" },
+    { name: "gstin", label: "GSTIN", maxLength: 15 },
+    { name: "address", label: "Address", multiline: true },
+  ],
+  columns: [
+    { name: "name", label: "Customer" },
+    { name: "customer_type", label: "Type" },
+    { name: "phone", label: "Phone" },
+    { name: "email", label: "Email" },
+    { name: "gstin", label: "GSTIN" },
+  ],
+};
 
 function Customers() {
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [payments, setPayments] = useState(initialPayments);
-
-  const handleReceivePayment = (payment) => {
-    setPayments((currentPayments) => [
-      ...currentPayments,
-      payment,
-    ]);
-  };
-
-  if (selectedCustomer) {
-    return (
-      <CustomerDetails
-        customer={selectedCustomer}
-        sales={sales}
-        payments={payments}
-        onBack={() => setSelectedCustomer(null)}
-        onReceivePayment={handleReceivePayment}
-      />
-    );
-  }
-
-  return (
-    <div className="mx-auto max-w-7xl">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
-          Customers
-        </h2>
-
-        <p className="mt-1 text-sm text-slate-500">
-          Manage customers and their outstanding balances.
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        <CustomerToolbar />
-
-        <CustomerTable
-          onSelectCustomer={setSelectedCustomer}
-        />
-      </div>
-    </div>
-  );
+  return <ContactManager config={customerConfig} />;
 }
 
 export default Customers;

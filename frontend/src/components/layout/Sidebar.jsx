@@ -4,6 +4,7 @@ import {
   Receipt,
   ShoppingCart,
   Package,
+  Boxes,
   Users,
   Truck,
   BarChart3,
@@ -12,12 +13,14 @@ import {
 import { NavLink } from "react-router-dom";
 
 import BusinessMenu from "../../components/layout/BusinessMenu";
+import { useAuth } from "../../contexts/useAuth";
 
 const menuItems = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "Sales", path: "/sales", icon: Receipt },
   { label: "Purchases", path: "/purchases", icon: ShoppingCart },
-  { label: "Inventory", path: "/inventory", icon: Package },
+  { label: "Products", path: "/products", icon: Package },
+  { label: "Inventory", path: "/inventory", icon: Boxes },
   { label: "Customers", path: "/customers", icon: Users },
   { label: "Suppliers", path: "/suppliers", icon: Truck },
   { label: "Reports", path: "/reports", icon: BarChart3 },
@@ -25,6 +28,7 @@ const menuItems = [
 
 function Sidebar() {
   const [isBusinessMenuOpen, setIsBusinessMenuOpen] = useState(false);
+  const { activeShop, user } = useAuth();
 
   return (
     <aside className="relative flex h-screen w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
@@ -41,7 +45,7 @@ function Sidebar() {
 
           <div>
             <h1 className="text-sm font-semibold text-slate-900">
-              Manar Motors
+              {activeShop?.name || user?.shop_name || "Select a shop"}
             </h1>
 
             <p className="text-[11px] text-slate-400">

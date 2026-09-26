@@ -11,11 +11,12 @@ function CustomerSection({ customers, selectedCustomer, onSelectCustomer }) {
 
   const handleSearch = (value) => {
     setSearch(value);
+    onSelectCustomer(null);
 
     const exactMatch = customers.find(
       (customer) =>
         customer.name.toLowerCase() === value.toLowerCase() ||
-        customer.phone === value
+        (customer.phone && customer.phone === value)
     );
 
     if (exactMatch) {
@@ -49,7 +50,7 @@ function CustomerSection({ customers, selectedCustomer, onSelectCustomer }) {
             <div className="absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
               {filteredCustomers.map((customer) => (
                 <button
-                  key={customer.id}
+                  key={customer.customer_id}
                   type="button"
                   onClick={() => {
                     onSelectCustomer(customer);
@@ -61,9 +62,11 @@ function CustomerSection({ customers, selectedCustomer, onSelectCustomer }) {
                     {customer.name}
                   </span>
 
-                  <span className="ml-2 text-slate-400">
-                    {customer.phone}
-                  </span>
+                  {customer.phone && (
+                    <span className="ml-2 text-slate-400">
+                      {customer.phone}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

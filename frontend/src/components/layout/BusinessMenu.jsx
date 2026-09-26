@@ -1,12 +1,15 @@
 import { Settings } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../contexts/useAuth";
 
 function BusinessMenu({ onClose }) {
+  const { activeShop, user } = useAuth();
+
   return (
     <div className="absolute bottom-3 left-3 right-3 z-20 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
       <div className="border-b border-slate-100 px-3 py-2">
         <p className="text-sm font-medium text-slate-900">
-          Manar Motors
+          {activeShop?.name || user?.shop_name || "Business"}
         </p>
 
         <p className="text-xs text-slate-400">
