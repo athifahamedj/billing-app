@@ -121,6 +121,36 @@ export function AuthProvider({ children }) {
     }
   }, [user, shops]);
 
+  const addShopAndSelect = useCallback(async (shop) => {
+    if (user?.role !== "super_admin") {
+      throw new Error("Only a super admin can add a shop.");
+    }
+
+    const context = await apiRequest("/shop-context", {
+      shopId: shop.shop_id,
+    });
+    if (context.shop_id !== shop.shop_id) {
+      throw new Error("The server returned a different shop context.");
+    }
+
+    setShops((current) =>
+      current.some((existing) => existing.shop_id === shop.shop_id)
+        ? current
+        : [...current, shop].sort((left, right) =>
+            left.name.localeCompare(right.name),
+          ),
+    );
+    setActiveShopId(shop.shop_id);
+    window.sessionStorage.setItem(ACTIVE_SHOP_KEY, shop.shop_id);
+    setAuthError("");
+  }, [user]);
+
+  const updateUsername = useCallback((username) => {
+    setUser((currentUser) =>
+      currentUser ? { ...currentUser, username } : currentUser,
+    );
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -132,8 +162,21 @@ export function AuthProvider({ children }) {
       login,
       logout,
       selectShop,
+      addShopAndSelect,
+      updateUsername,
     }),
-    [user, shops, activeShopId, isLoading, authError, login, logout, selectShop],
+    [
+      user,
+      shops,
+      activeShopId,
+      isLoading,
+      authError,
+      login,
+      logout,
+      selectShop,
+      addShopAndSelect,
+      updateUsername,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

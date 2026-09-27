@@ -27,6 +27,75 @@ class ShopResponse(BaseModel):
     slug: str
 
 
+class ShopSetupWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=200)
+    slug: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    phone: str = Field(default="", max_length=30)
+    address: str = Field(default="")
+    gstin: str = Field(default="", max_length=15)
+    username: str = Field(min_length=1, max_length=100)
+    display_name: str = Field(min_length=1, max_length=200)
+    password: str = Field(min_length=4, max_length=1024)
+
+    @field_validator(
+        "name",
+        "slug",
+        "phone",
+        "address",
+        "gstin",
+        "username",
+        "display_name",
+        mode="before",
+    )
+    @classmethod
+    def trim_setup_text(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("slug", "username")
+    @classmethod
+    def normalize_login_identifiers(cls, value: str) -> str:
+        return value.lower()
+
+    @field_validator("gstin")
+    @classmethod
+    def validate_shop_gstin(cls, value: str) -> str:
+        if value and re.fullmatch(r"[0-9A-Z]{15}", value.upper()) is None:
+            raise ValueError("GSTIN must contain exactly 15 letters or digits.")
+        return value.upper()
+
+
+class ShopUserResponse(BaseModel):
+    user_id: UUID
+    username: str
+    display_name: str
+    shop_id: UUID
+    shop_name: str
+
+
+class AdminUsernameResponse(BaseModel):
+    username: str
+
+
+class ShopUserCredentialsWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    username: str | None = Field(default=None, min_length=1, max_length=100)
+    password: str | None = Field(default=None, min_length=4, max_length=1024)
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def normalize_username(cls, value: object) -> object:
+        return value.strip().lower() if isinstance(value, str) else value
+
+    @field_validator("password", mode="before")
+    @classmethod
+    def preserve_password_and_reject_blank(cls, value: object) -> object:
+        if isinstance(value, str) and not value:
+            return None
+        return value
+
 class BusinessSettings(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 

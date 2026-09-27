@@ -12,6 +12,8 @@ import Customers from "../pages/Customers/Customers";
 import Suppliers from "../pages/Suppliers/Suppliers";
 import Reports from "../pages/Reports/Reports";
 import Settings from "../pages/Settings/Settings";
+import ShopSetup from "../pages/Administration/ShopSetup";
+import ShopAccounts from "../pages/Administration/ShopAccounts";
 import { useAuth } from "../../contexts/useAuth";
 
 function AppRoutes() {
@@ -44,6 +46,26 @@ function AppRoutes() {
         <Route path="/suppliers" element={<Suppliers />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/reports" element={<Reports />} />
+        <Route
+          path="/shops/new"
+          element={
+            user?.role === "super_admin" ? (
+              <ShopSetup />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )
+          }
+        />
+        <Route
+          path="/shop-logins"
+          element={
+            user?.role === "super_admin" ? (
+              <ShopAccounts />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )
+          }
+        />
       </Route>
     </Routes>
   );

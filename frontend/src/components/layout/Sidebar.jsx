@@ -9,6 +9,8 @@ import {
   Truck,
   BarChart3,
   ChevronUp,
+  Store,
+  KeyRound,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -29,6 +31,14 @@ const menuItems = [
 function Sidebar() {
   const [isBusinessMenuOpen, setIsBusinessMenuOpen] = useState(false);
   const { activeShop, user } = useAuth();
+  const visibleMenuItems =
+    user?.role === "super_admin"
+      ? [
+          ...menuItems,
+          { label: "Set up shop", path: "/shops/new", icon: Store },
+          { label: "Shop logins", path: "/shop-logins", icon: KeyRound },
+        ]
+      : menuItems;
 
   return (
     <aside className="relative flex h-screen w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
@@ -70,7 +80,7 @@ function Sidebar() {
         </p>
 
         <div className="space-y-1">
-          {menuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const Icon = item.icon;
 
             return (

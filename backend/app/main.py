@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.routes.auth import router as auth_router
+from app.routes.admin import router as admin_router
 from app.routes.contacts import router as contacts_router
 from app.db.database import get_db
 from app.routes.products import router as products_router
@@ -18,6 +19,7 @@ from app.routes.settings import router as settings_router
 
 app = FastAPI()
 app.include_router(auth_router)
+app.include_router(admin_router)
 app.include_router(contacts_router)
 app.include_router(products_router)
 app.include_router(purchases_router)

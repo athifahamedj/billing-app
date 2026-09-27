@@ -229,6 +229,177 @@ class ShopAuthenticationTests(unittest.TestCase):
             ["Second shop test product"],
         )
 
+    def test_super_admin_can_create_shop_with_initial_login(self) -> None:
+        self.login(self.users["admin"])
+        setup = {
+            "name": "New Setup Shop",
+            "slug": f"new-setup-{uuid.uuid4().hex[:10]}",
+            "phone": "1234567890",
+            "address": "Setup test address",
+            "gstin": "",
+            "username": f"setup-{uuid.uuid4().hex[:10]}",
+            "display_name": "Setup Test Owner",
+            "password": f" {self.password} ",
+        }
+
+        created = self.client.post(
+            "/api/admin/shops",
+            json=setup,
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(created.status_code, 201, created.text)
+        self.assertEqual(created.json()["name"], setup["name"])
+        self.assertEqual(created.json()["slug"], setup["slug"])
+
+        available_shops = self.client.get("/api/auth/shops")
+        self.assertEqual(available_shops.status_code, 200)
+        created_shop = next(
+            shop
+            for shop in available_shops.json()
+            if shop["shop_id"] == created.json()["shop_id"]
+        )
+        selected = self.client.get(
+            "/api/shop-context",
+            headers={"X-Shop-ID": created_shop["shop_id"]},
+        )
+        self.assertEqual(selected.status_code, 200, selected.text)
+
+        self.client.post("/api/auth/logout", headers=self.csrf_headers)
+        owner_login = self.client.post(
+            "/api/auth/login",
+            json={"username": setup["username"], "password": setup["password"]},
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(owner_login.status_code, 200, owner_login.text)
+        self.assertEqual(owner_login.json()["shop_id"], created_shop["shop_id"])
+        owner_shops = self.client.get("/api/auth/shops")
+        self.assertEqual(
+            [shop["shop_id"] for shop in owner_shops.json()],
+            [created_shop["shop_id"]],
+        )
+
+    def test_shop_user_cannot_create_shops(self) -> None:
+        self.login(self.users["manar"])
+        self_update = self.client.put(
+            "/api/admin/me/credentials",
+            json={"username": "not-an-admin"},
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(self_update.status_code, 403)
+
+        account_list = self.client.get("/api/admin/shop-users")
+        self.assertEqual(account_list.status_code, 403)
+        forbidden_update = self.client.put(
+            f"/api/admin/shop-users/{self.second_user.user_id}/credentials",
+            json={"password": "new-password"},
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(forbidden_update.status_code, 403)
+
+        response = self.client.post(
+            "/api/admin/shops",
+            json={
+                "name": "Not Allowed Shop",
+                "slug": f"not-allowed-{uuid.uuid4().hex[:10]}",
+                "username": f"not-allowed-{uuid.uuid4().hex[:10]}",
+                "display_name": "Not Allowed",
+                "password": self.password,
+            },
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_super_admin_can_update_shop_login_username_and_password(self) -> None:
+        self.login(self.users["admin"])
+        account_list = self.client.get("/api/admin/shop-users")
+        self.assertEqual(account_list.status_code, 200, account_list.text)
+        listed_user_ids = {account["user_id"] for account in account_list.json()}
+        self.assertIn(str(self.manar_user.user_id), listed_user_ids)
+        self.assertIn(str(self.second_user.user_id), listed_user_ids)
+        self.assertNotIn(str(self.admin_user.user_id), listed_user_ids)
+
+        updated_username = f"renamed-{uuid.uuid4().hex[:10]}"
+        username_response = self.client.put(
+            f"/api/admin/shop-users/{self.second_user.user_id}/credentials",
+            json={"username": updated_username},
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(username_response.status_code, 200, username_response.text)
+        self.assertEqual(username_response.json()["username"], updated_username)
+        self.assertEqual(
+            username_response.json()["shop_id"],
+            self.second_shop_id,
+        )
+
+        self.client.post("/api/auth/logout", headers=self.csrf_headers)
+        renamed_login = self.login(updated_username)
+        self.assertEqual(renamed_login.status_code, 200, renamed_login.text)
+
+        self.client.post("/api/auth/logout", headers=self.csrf_headers)
+        self.login(self.users["admin"])
+        updated_password = "new-private-shop-password"
+        password_response = self.client.put(
+            f"/api/admin/shop-users/{self.second_user.user_id}/credentials",
+            json={"password": updated_password},
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(password_response.status_code, 200, password_response.text)
+        self.assertEqual(password_response.json()["username"], updated_username)
+
+        self.client.post("/api/auth/logout", headers=self.csrf_headers)
+        old_password_login = self.client.post(
+            "/api/auth/login",
+            json={"username": updated_username, "password": self.password},
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(old_password_login.status_code, 401)
+        new_password_login = self.client.post(
+            "/api/auth/login",
+            json={"username": updated_username, "password": updated_password},
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(new_password_login.status_code, 200, new_password_login.text)
+        self.assertEqual(new_password_login.json()["shop_id"], self.second_shop_id)
+
+    def test_super_admin_can_update_own_username(self) -> None:
+        self.login(self.users["admin"])
+        updated_username = f"renamed-admin-{uuid.uuid4().hex[:10]}"
+        updated = self.client.put(
+            "/api/admin/me/credentials",
+            json={"username": updated_username},
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(updated.status_code, 200, updated.text)
+        self.assertEqual(updated.json()["username"], updated_username)
+
+        self.client.post("/api/auth/logout", headers=self.csrf_headers)
+        login = self.login(updated_username)
+        self.assertEqual(login.status_code, 200, login.text)
+        self.assertEqual(login.json()["role"], "super_admin")
+
+    def test_shop_login_credential_update_validates_conflicts_and_csrf(self) -> None:
+        self.login(self.users["admin"])
+        path = f"/api/admin/shop-users/{self.second_user.user_id}/credentials"
+        duplicate_username = self.client.put(
+            path,
+            json={"username": self.manar_user.username},
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(duplicate_username.status_code, 409)
+
+        no_change = self.client.put(
+            path,
+            json={},
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(no_change.status_code, 422)
+
+        missing_csrf = self.client.put(
+            path,
+            json={"password": "another-password"},
+        )
+        self.assertEqual(missing_csrf.status_code, 403)
+
     def test_health_check_confirms_database_connectivity(self) -> None:
         health = self.client.get("/health")
         self.assertEqual(health.status_code, 200, health.text)
