@@ -8,7 +8,7 @@ from app.models import User
 
 
 def main() -> None:
-    username = input("Username: ").strip().lower()
+    username = input("Username [super-admin]: ").strip().lower() or "super-admin"
     display_name = input("Display name: ").strip()
     password = getpass.getpass("Password (minimum 4 characters): ")
     password_confirmation = getpass.getpass("Confirm password: ")

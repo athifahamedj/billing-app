@@ -5,6 +5,7 @@ const customerConfig = {
   label: "Customer",
   endpoint: "customers",
   idField: "customer_id",
+  ledgerType: "customer",
   fields: [
     { name: "name", label: "Customer name", required: true, maxLength: 200 },
     { name: "customer_type", label: "Customer type", maxLength: 50 },

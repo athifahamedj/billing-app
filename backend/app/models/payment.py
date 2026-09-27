@@ -21,6 +21,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
 if TYPE_CHECKING:
+    from app.models.purchase import Purchase
     from app.models.sale import Sale
 
 
@@ -96,4 +97,8 @@ class Payment(Base):
     sale: Mapped["Sale | None"] = relationship(
         back_populates="payments",
         foreign_keys=[sale_id],
+    )
+    purchase: Mapped["Purchase | None"] = relationship(
+        back_populates="payments",
+        foreign_keys=[purchase_id],
     )

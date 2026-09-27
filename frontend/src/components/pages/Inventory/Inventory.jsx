@@ -10,7 +10,6 @@ function Inventory() {
   const { activeShopId } = useAuth();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
-  const [includeInactive, setIncludeInactive] = useState(false);
   const [editingProduct, setEditingProduct] = useState(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,7 +26,6 @@ function Inventory() {
     try {
       const params = new URLSearchParams();
       if (search.trim()) params.set("q", search.trim());
-      if (includeInactive) params.set("include_inactive", "true");
       const query = params.size ? `?${params.toString()}` : "";
       const result = await apiRequest(`/products${query}`, {
         shopId: activeShopId,
@@ -40,7 +38,7 @@ function Inventory() {
     } finally {
       if (!signal?.aborted) setIsLoading(false);
     }
-  }, [activeShopId, includeInactive, search]);
+  }, [activeShopId, search]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -66,20 +64,6 @@ function Inventory() {
     );
     setEditingProduct(undefined);
     await loadProducts();
-  };
-
-  const deactivateProduct = async (product) => {
-    if (!window.confirm(`Deactivate "${product.name}"?`)) return;
-    setError("");
-    try {
-      await apiRequest(`/products/${product.product_id}`, {
-        method: "DELETE",
-        shopId: activeShopId,
-      });
-      await loadProducts();
-    } catch (requestError) {
-      setError(requestError.message);
-    }
   };
 
   return (
@@ -119,15 +103,6 @@ function Inventory() {
               className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none placeholder:text-slate-400 focus:border-slate-400 focus:bg-white"
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-slate-600">
-            <input
-              type="checkbox"
-              checked={includeInactive}
-              onChange={(event) => setIncludeInactive(event.target.checked)}
-              className="rounded border-slate-300"
-            />
-            Show deactivated
-          </label>
         </div>
       </section>
 
@@ -141,7 +116,6 @@ function Inventory() {
         products={products}
         isLoading={isLoading}
         onEdit={(product) => setEditingProduct(product)}
-        onDeactivate={deactivateProduct}
       />
 
       {editingProduct !== undefined && (
