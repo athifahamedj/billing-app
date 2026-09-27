@@ -15,8 +15,14 @@ from app.main import app
 from app.models import (
     Customer,
     InventoryMovement,
+    Payment,
     Product,
+    Purchase,
+    PurchaseItem,
+    Sale,
+    SaleItem,
     Shop,
+    ShopSetting,
     Supplier,
     User,
 )
@@ -308,6 +314,208 @@ class ShopAuthenticationTests(unittest.TestCase):
             headers=self.csrf_headers,
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_super_admin_can_permanently_delete_one_shop_and_all_its_data(
+        self,
+    ) -> None:
+        suffix = uuid.uuid4().hex[:12]
+        data_session = Session(
+            bind=self.connection,
+            join_transaction_mode="create_savepoint",
+        )
+        try:
+            sale = Sale(
+                shop_id=self.second_shop.shop_id,
+                customer_id=self.second_shop_customer.customer_id,
+                invoice_number=f"DELETE-SALE-{suffix}",
+                sale_date=date.today(),
+                subtotal=Decimal("20.00"),
+                taxable_amount=Decimal("20.00"),
+                gst_amount=Decimal("0.00"),
+                total_amount=Decimal("20.00"),
+                status="completed",
+            )
+            purchase = Purchase(
+                shop_id=self.second_shop.shop_id,
+                supplier_id=self.second_shop_supplier.supplier_id,
+                invoice_number=f"DELETE-PURCHASE-{suffix}",
+                purchase_date=date.today(),
+                subtotal=Decimal("15.00"),
+                taxable_amount=Decimal("15.00"),
+                gst_amount=Decimal("0.00"),
+                total_amount=Decimal("15.00"),
+                status="received",
+            )
+            data_session.add_all([sale, purchase])
+            data_session.flush()
+
+            sale_item = SaleItem(
+                shop_id=self.second_shop.shop_id,
+                sale_id=sale.sale_id,
+                product_id=self.second_product.product_id,
+                product_name=self.second_product.name,
+                part_number=self.second_product.part_number,
+                quantity=1,
+                unit_price=Decimal("20.00"),
+                discount_amount=Decimal("0.00"),
+                gst_rate=Decimal("0.00"),
+                gst_amount=Decimal("0.00"),
+            )
+            purchase_item = PurchaseItem(
+                shop_id=self.second_shop.shop_id,
+                purchase_id=purchase.purchase_id,
+                product_id=self.second_product.product_id,
+                product_name=self.second_product.name,
+                part_number=self.second_product.part_number,
+                quantity=1,
+                unit_price=Decimal("15.00"),
+                discount_amount=Decimal("0.00"),
+                gst_rate=Decimal("0.00"),
+                gst_amount=Decimal("0.00"),
+            )
+            data_session.add_all([sale_item, purchase_item])
+            data_session.flush()
+
+            purchase_movement = InventoryMovement(
+                shop_id=self.second_shop.shop_id,
+                product_id=self.second_product.product_id,
+                movement_type="purchase",
+                quantity_delta=1,
+                purchase_item_id=purchase_item.purchase_item_id,
+            )
+            sale_movement = InventoryMovement(
+                shop_id=self.second_shop.shop_id,
+                product_id=self.second_product.product_id,
+                movement_type="sale",
+                quantity_delta=-1,
+                sale_item_id=sale_item.sale_item_id,
+            )
+            data_session.add_all([purchase_movement, sale_movement])
+            data_session.flush()
+            data_session.add(
+                InventoryMovement(
+                    shop_id=self.second_shop.shop_id,
+                    product_id=self.second_product.product_id,
+                    movement_type="reversal",
+                    quantity_delta=1,
+                    reverses_movement_id=sale_movement.movement_id,
+                )
+            )
+            data_session.add_all(
+                [
+                    Payment(
+                        shop_id=self.second_shop.shop_id,
+                        sale_id=sale.sale_id,
+                        amount=Decimal("20.00"),
+                        payment_date=date.today(),
+                        payment_method="cash",
+                    ),
+                    Payment(
+                        shop_id=self.second_shop.shop_id,
+                        purchase_id=purchase.purchase_id,
+                        amount=Decimal("15.00"),
+                        payment_date=date.today(),
+                        payment_method="cash",
+                    ),
+                    ShopSetting(
+                        shop_id=self.second_shop.shop_id,
+                        setting_key="test",
+                        value={"configured": True},
+                    ),
+                ]
+            )
+            data_session.flush()
+        finally:
+            data_session.close()
+
+        self.assertEqual(self.login(self.users["admin"]).status_code, 200)
+        delete_url = f"/api/admin/shops/{self.second_shop_id}"
+        delete_body = {"slug": self.second_shop.slug}
+        no_csrf = self.client.request(
+            "DELETE",
+            delete_url,
+            json=delete_body,
+        )
+        self.assertEqual(no_csrf.status_code, 403)
+
+        self.client.post("/api/auth/logout", headers=self.csrf_headers)
+        self.assertEqual(self.login(self.users["second"]).status_code, 200)
+        forbidden = self.client.request(
+            "DELETE",
+            delete_url,
+            json=delete_body,
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(forbidden.status_code, 403)
+
+        self.client.post("/api/auth/logout", headers=self.csrf_headers)
+        self.assertEqual(self.login(self.users["admin"]).status_code, 200)
+        incorrect_confirmation = self.client.request(
+            "DELETE",
+            delete_url,
+            json={"slug": "wrong-shop"},
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(incorrect_confirmation.status_code, 422)
+
+        deleted = self.client.request(
+            "DELETE",
+            delete_url,
+            json=delete_body,
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(deleted.status_code, 204)
+
+        verification_session = Session(
+            bind=self.connection,
+            join_transaction_mode="create_savepoint",
+        )
+        try:
+            for model in (
+                Shop,
+                User,
+                Product,
+                Customer,
+                Supplier,
+                Sale,
+                SaleItem,
+                Purchase,
+                PurchaseItem,
+                Payment,
+                InventoryMovement,
+                ShopSetting,
+            ):
+                self.assertEqual(
+                    verification_session.scalar(
+                        select(model).where(
+                            model.shop_id == self.second_shop.shop_id
+                        )
+                    ),
+                    None,
+                    model.__name__,
+                )
+            self.assertIsNotNone(
+                verification_session.get(Shop, self.manar.shop_id)
+            )
+            self.assertIsNone(
+                verification_session.get(Shop, self.second_shop.shop_id)
+            )
+            self.assertIsNone(
+                verification_session.get(Product, self.second_product.product_id)
+            )
+            self.assertIsNotNone(
+                verification_session.get(Product, self.manar_product.product_id)
+            )
+        finally:
+            verification_session.close()
+
+        missing_shop = self.client.request(
+            "DELETE",
+            delete_url,
+            json=delete_body,
+            headers=self.csrf_headers,
+        )
+        self.assertEqual(missing_shop.status_code, 404)
 
     def test_super_admin_can_update_shop_login_username_and_password(self) -> None:
         self.login(self.users["admin"])

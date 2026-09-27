@@ -5,10 +5,19 @@ import { useAuth } from "../../../contexts/useAuth";
 import { apiRequest } from "../../../lib/api";
 
 function CustomerLedger({ customer, onClose }) {
+  const initialSalesCount = 5;
   const { activeShopId } = useAuth();
   const [ledger, setLedger] = useState(null);
+  const [visibleSalesState, setVisibleSalesState] = useState({
+    customerId: customer.customer_id,
+    count: initialSalesCount,
+  });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const visibleSalesCount =
+    visibleSalesState.customerId === customer.customer_id
+      ? visibleSalesState.count
+      : initialSalesCount;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -98,8 +107,9 @@ function CustomerLedger({ customer, onClose }) {
                   No sales for this customer yet.
                 </p>
               ) : (
-                <div className="space-y-4">
-                  {ledger.sales.map((sale) => (
+                <>
+                  <div className="space-y-4">
+                    {ledger.sales.slice(0, visibleSalesCount).map((sale) => (
                     <article
                       key={sale.sale_id}
                       className="overflow-hidden rounded-md border border-slate-200"
@@ -194,8 +204,48 @@ function CustomerLedger({ customer, onClose }) {
                         </div>
                       </div>
                     </article>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-xs text-slate-500">
+                      Showing {Math.min(visibleSalesCount, ledger.sales.length)} of{" "}
+                      {ledger.sales.length} invoices
+                    </p>
+                    <div className="flex gap-4">
+                      {visibleSalesCount > initialSalesCount && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setVisibleSalesState({
+                              customerId: customer.customer_id,
+                              count: initialSalesCount,
+                            })
+                          }
+                          className="text-sm font-medium text-slate-600 hover:text-slate-900"
+                        >
+                          Show less
+                        </button>
+                      )}
+                      {visibleSalesCount < ledger.sales.length && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setVisibleSalesState({
+                              customerId: customer.customer_id,
+                              count: Math.min(
+                                visibleSalesCount + initialSalesCount,
+                                ledger.sales.length,
+                              ),
+                            })
+                          }
+                          className="text-sm font-medium text-blue-700 hover:underline"
+                        >
+                          View more
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
             </>
           ) : null}

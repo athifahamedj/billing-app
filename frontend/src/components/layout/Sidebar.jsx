@@ -11,6 +11,7 @@ import {
   ChevronUp,
   Store,
   KeyRound,
+  Plus,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -35,7 +36,8 @@ function Sidebar() {
     user?.role === "super_admin"
       ? [
           ...menuItems,
-          { label: "Set up shop", path: "/shops/new", icon: Store },
+          { label: "Set up shop", path: "/shops/new", icon: Plus },
+          { label: "Manage shops", path: "/shops/manage", icon: Store },
           { label: "Shop logins", path: "/shop-logins", icon: KeyRound },
         ]
       : menuItems;

@@ -1,17 +1,31 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pwdlib import PasswordHash
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.db.database import get_db
-from app.models import Shop, User
+from app.models import (
+    Customer,
+    InventoryMovement,
+    Payment,
+    Product,
+    Purchase,
+    PurchaseItem,
+    Sale,
+    SaleItem,
+    Shop,
+    ShopSetting,
+    Supplier,
+    User,
+)
 from app.schemas import (
     AdminUsernameResponse,
+    ShopDeleteConfirmation,
     ShopResponse,
     ShopSetupWrite,
     ShopUserCredentialsWrite,
@@ -229,3 +243,60 @@ def create_shop(
         name=shop.name,
         slug=shop.slug,
     )
+
+
+@router.delete(
+    "/shops/{shop_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_shop(
+    shop_id: UUID,
+    confirmation: ShopDeleteConfirmation,
+    user: Annotated[User, Depends(get_current_user)],
+    session: Session = Depends(get_db),
+) -> Response:
+    _require_super_admin(user)
+
+    shop = session.scalar(
+        select(Shop)
+        .where(Shop.shop_id == shop_id)
+        .with_for_update()
+    )
+    if shop is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The shop was not found.",
+        )
+    if confirmation.slug != shop.slug:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Enter the shop short name exactly to confirm deletion.",
+        )
+
+    session.execute(
+        delete(InventoryMovement).where(
+            InventoryMovement.shop_id == shop_id,
+            InventoryMovement.movement_type == "reversal",
+        )
+    )
+    session.execute(
+        delete(InventoryMovement).where(InventoryMovement.shop_id == shop_id)
+    )
+    session.execute(delete(Payment).where(Payment.shop_id == shop_id))
+    session.execute(delete(SaleItem).where(SaleItem.shop_id == shop_id))
+    session.execute(delete(PurchaseItem).where(PurchaseItem.shop_id == shop_id))
+    session.execute(delete(Sale).where(Sale.shop_id == shop_id))
+    session.execute(delete(Purchase).where(Purchase.shop_id == shop_id))
+    session.execute(delete(Customer).where(Customer.shop_id == shop_id))
+    session.execute(delete(Supplier).where(Supplier.shop_id == shop_id))
+    session.execute(delete(Product).where(Product.shop_id == shop_id))
+    session.execute(delete(ShopSetting).where(ShopSetting.shop_id == shop_id))
+    session.execute(
+        delete(User).where(
+            User.shop_id == shop_id,
+            User.role == "shop_user",
+        )
+    )
+    session.delete(shop)
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

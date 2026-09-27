@@ -14,6 +14,7 @@ import Reports from "../pages/Reports/Reports";
 import Settings from "../pages/Settings/Settings";
 import ShopSetup from "../pages/Administration/ShopSetup";
 import ShopAccounts from "../pages/Administration/ShopAccounts";
+import ShopManagement from "../pages/Administration/ShopManagement";
 import { useAuth } from "../../contexts/useAuth";
 
 function AppRoutes() {
@@ -61,6 +62,16 @@ function AppRoutes() {
           element={
             user?.role === "super_admin" ? (
               <ShopAccounts />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )
+          }
+        />
+        <Route
+          path="/shops/manage"
+          element={
+            user?.role === "super_admin" ? (
+              <ShopManagement />
             ) : (
               <Navigate to="/dashboard" replace />
             )

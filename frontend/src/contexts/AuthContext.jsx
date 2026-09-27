@@ -145,6 +145,21 @@ export function AuthProvider({ children }) {
     setAuthError("");
   }, [user]);
 
+  const removeShop = useCallback((shopId) => {
+    const remainingShops = shops.filter((shop) => shop.shop_id !== shopId);
+    setShops(remainingShops);
+
+    if (activeShopId === shopId) {
+      const nextShopId = remainingShops[0]?.shop_id || null;
+      setActiveShopId(nextShopId);
+      if (nextShopId) {
+        window.sessionStorage.setItem(ACTIVE_SHOP_KEY, nextShopId);
+      } else {
+        window.sessionStorage.removeItem(ACTIVE_SHOP_KEY);
+      }
+    }
+  }, [activeShopId, shops]);
+
   const updateUsername = useCallback((username) => {
     setUser((currentUser) =>
       currentUser ? { ...currentUser, username } : currentUser,
@@ -163,6 +178,7 @@ export function AuthProvider({ children }) {
       logout,
       selectShop,
       addShopAndSelect,
+      removeShop,
       updateUsername,
     }),
     [
@@ -175,6 +191,7 @@ export function AuthProvider({ children }) {
       logout,
       selectShop,
       addShopAndSelect,
+      removeShop,
       updateUsername,
     ],
   );

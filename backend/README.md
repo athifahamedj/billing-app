@@ -25,7 +25,10 @@ After signing in as a super admin, use **Set up shop** in the application menu
 to create a shop and its first shop-user login together. New shops appear in
 the shop selector immediately. Public shop registration is not enabled.
 Use **Shop logins** to change a shop user's username or set a new password.
-The same page lets a signed-in super admin update their own login. The
+Use **Manage shops** to permanently remove a closed shop and all its
+shop-scoped data. This cannot be undone; existing database backups may still
+contain older copies.
+**Shop logins** also lets a signed-in super admin update their own login. The
 interactive `scripts.create_super_admin` command defaults its username to
 `super-admin`; existing super-admin credentials are not changed automatically.
 

@@ -66,6 +66,12 @@ class ShopSetupWrite(BaseModel):
         return value.upper()
 
 
+class ShopDeleteConfirmation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    slug: str = Field(min_length=1, max_length=100)
+
+
 class ShopUserResponse(BaseModel):
     user_id: UUID
     username: str
