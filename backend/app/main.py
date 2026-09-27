@@ -1,21 +1,29 @@
 import os
+from typing import Annotated
 from urllib.parse import urlsplit
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.routes.auth import router as auth_router
 from app.routes.contacts import router as contacts_router
+from app.db.database import get_db
 from app.routes.products import router as products_router
 from app.routes.purchases import router as purchases_router
+from app.routes.reports import router as reports_router
 from app.routes.sales import router as sales_router
+from app.routes.settings import router as settings_router
 
 app = FastAPI()
 app.include_router(auth_router)
 app.include_router(contacts_router)
 app.include_router(products_router)
 app.include_router(purchases_router)
+app.include_router(reports_router)
 app.include_router(sales_router)
+app.include_router(settings_router)
 
 
 def _origin_value(origin: str | None) -> str | None:
@@ -81,5 +89,11 @@ async def protect_api_writes(request: Request, call_next):
 
 
 @app.get("/")
-def root():
+def root() -> dict[str, str]:
     return {"message": "Billing App API is running"}
+
+
+@app.get("/health")
+def health(session: Annotated[Session, Depends(get_db)]) -> dict[str, str]:
+    session.execute(text("SELECT 1"))
+    return {"status": "ok"}

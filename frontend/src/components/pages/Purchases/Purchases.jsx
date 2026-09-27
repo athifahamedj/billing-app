@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../contexts/useAuth";
 import { apiRequest } from "../../../lib/api";
 import { useProducts } from "../../../lib/useProducts";
+import PaymentCollectionModal from "../shared/PaymentCollectionModal";
 import ProductSearch from "./components/ProductSearch";
 import PurchaseItems from "./components/PurchaseItems";
 import PurchaseSummary from "./components/PurchaseSummary";
@@ -28,6 +29,7 @@ function Purchases() {
   const [purchaseItems, setPurchaseItems] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [paymentTarget, setPaymentTarget] = useState(null);
   const [error, setError] = useState("");
 
   const loadPurchases = useCallback(async (signal) => {
@@ -134,20 +136,35 @@ function Purchases() {
     }
   };
 
-  const changePurchaseStatus = async (purchase, action) => {
-    const verb = action === "receive" ? "receive" : "void";
-    if (action === "void" && !window.confirm(`Void invoice ${purchase.invoice_number}?`)) {
-      return;
-    }
+  const receivePurchaseStock = async (purchase) => {
     setError("");
     try {
-      await apiRequest(`/purchases/${purchase.purchase_id}/${action}`, {
+      await apiRequest(`/purchases/${purchase.purchase_id}/receive`, {
         method: "POST",
         shopId: activeShopId,
       });
       await loadPurchases();
     } catch (requestError) {
-      setError(requestError.message || `Could not ${verb} purchase.`);
+      setError(requestError.message || "Could not receive stock.");
+    }
+  };
+
+  const recordPurchasePayment = async (payments) => {
+    if (!paymentTarget) return;
+    setIsSaving(true);
+    setError("");
+    try {
+      await apiRequest(`/purchases/${paymentTarget.purchase_id}/payments`, {
+        method: "POST",
+        shopId: activeShopId,
+        body: JSON.stringify({ payments }),
+      });
+      setPaymentTarget(null);
+      await loadPurchases();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -335,37 +352,76 @@ function Purchases() {
                         </div>
                       ))}
                     </td>
-                    <td className="px-4 py-3">
-                      ₹{Number(purchase.total_amount).toFixed(2)}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <p>₹{Number(purchase.total_amount).toFixed(2)}</p>
+                      <p className="mt-1 text-xs capitalize text-slate-500">
+                        {purchase.status === "received"
+                          ? purchase.payment_status.replace("_", " ")
+                          : purchase.status === "void"
+                            ? "Cancelled"
+                            : purchase.status}
+                      </p>
+                      {purchase.status === "received" && (
+                        <>
+                          <p className="text-xs text-slate-500">
+                            Paid ₹{Number(purchase.paid_amount).toFixed(2)}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Due ₹{Number(purchase.outstanding_amount).toFixed(2)}
+                          </p>
+                        </>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full bg-slate-100 px-2 py-1 text-xs capitalize">
-                          {purchase.status}
+                          {purchase.status === "void" ? "Cancelled" : purchase.status}
                         </span>
                         {purchase.status === "draft" && (
                           <button
                             type="button"
                             onClick={() =>
-                              changePurchaseStatus(purchase, "receive")
+                              receivePurchaseStock(purchase)
                             }
                             className="rounded bg-emerald-700 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-emerald-800"
                           >
                             Receive stock
                           </button>
                         )}
-                        {purchase.status !== "void" && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              changePurchaseStatus(purchase, "void")
-                            }
-                            className="rounded border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                          >
-                            Void
-                          </button>
-                        )}
+                        {purchase.status === "received" &&
+                          Number(purchase.outstanding_amount) > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setPaymentTarget(purchase)}
+                              className="rounded bg-blue-700 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-blue-800"
+                            >
+                              Record payment
+                            </button>
+                          )}
                       </div>
+                      {purchase.payments.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {purchase.payments.map((payment) => (
+                            <div
+                              key={payment.payment_id}
+                              className="flex flex-wrap items-center justify-between gap-2 text-xs"
+                            >
+                              <span>
+                                ₹{Number(payment.amount).toFixed(2)} ·{" "}
+                                <span className="capitalize">
+                                  {payment.payment_method.replace("_", " ")}
+                                </span>{" "}
+                                ({payment.status === "void" ? "Reversed" : "Recorded"})
+                                {payment.void_reason && (
+                                  <span className="block text-slate-500">
+                                    Reason: {payment.void_reason}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -374,6 +430,19 @@ function Purchases() {
           </table>
         </div>
       </section>
+      {paymentTarget && (
+        <PaymentCollectionModal
+          key={paymentTarget.purchase_id}
+          title={`Supplier payment · ${paymentTarget.invoice_number}`}
+          total={Number(paymentTarget.outstanding_amount)}
+          totalLabel="Purchase balance"
+          requirePayment
+          onClose={() => setPaymentTarget(null)}
+          onConfirm={recordPurchasePayment}
+          isSaving={isSaving}
+          error={error}
+        />
+      )}
     </div>
   );
 }

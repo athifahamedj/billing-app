@@ -5,6 +5,7 @@ const supplierConfig = {
   label: "Supplier",
   endpoint: "suppliers",
   idField: "supplier_id",
+  ledgerType: "supplier",
   fields: [
     { name: "name", label: "Supplier name", required: true, maxLength: 200 },
     { name: "supplier_type", label: "Supplier type", maxLength: 100 },

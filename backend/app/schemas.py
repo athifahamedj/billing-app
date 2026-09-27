@@ -27,6 +27,62 @@ class ShopResponse(BaseModel):
     slug: str
 
 
+class BusinessSettings(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
+    name: str = Field(min_length=1, max_length=200)
+    phone: str = Field(default="", max_length=30)
+    address: str = Field(default="")
+    gstin: str = Field(default="", max_length=15)
+    invoicePrefix: str = Field(default="INV", max_length=20)
+
+    @field_validator("gstin")
+    @classmethod
+    def validate_gstin(cls, value: str) -> str:
+        if value and re.fullmatch(r"[0-9A-Z]{15}", value.upper()) is None:
+            raise ValueError("GSTIN must contain exactly 15 letters or digits.")
+        return value.upper()
+
+
+class BillingSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    defaultGstRate: Decimal = Field(ge=0, le=100, max_digits=5, decimal_places=2)
+    taxMode: Literal["CGST_SGST", "IGST"]
+    pricesIncludeGst: bool
+    defaultDiscount: Decimal = Field(ge=0, le=100, max_digits=5, decimal_places=2)
+
+
+class InvoiceSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    showGstBreakup: bool
+    showDiscount: bool
+    showSavings: bool
+    showCustomerPhone: bool
+
+
+class InventorySettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    lowStockAlerts: bool
+    defaultReorderLevel: int = Field(ge=0, le=1_000_000)
+    outOfStockAlerts: bool
+
+
+class ShopSettingsWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    business: BusinessSettings
+    billing: BillingSettings
+    invoice: InvoiceSettings
+    inventory: InventorySettings
+
+
+class ShopSettingsResponse(ShopSettingsWrite):
+    pass
+
+
 class ProductWrite(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
@@ -219,6 +275,19 @@ class PurchaseItemResponse(BaseModel):
     gst_amount: Decimal
 
 
+class PaymentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    payment_id: UUID
+    amount: Decimal
+    payment_date: date
+    payment_method: str
+    reference: str | None
+    note: str | None
+    status: Literal["recorded", "void"]
+    void_reason: str | None
+
+
 class PurchaseResponse(BaseModel):
     purchase_id: UUID
     shop_id: UUID
@@ -232,7 +301,17 @@ class PurchaseResponse(BaseModel):
     gst_amount: Decimal
     total_amount: Decimal
     status: Literal["draft", "received", "void"]
+    paid_amount: Decimal
+    outstanding_amount: Decimal
+    payment_status: Literal[
+        "draft",
+        "unpaid",
+        "partially_paid",
+        "paid",
+        "void",
+    ]
     items: list[PurchaseItemResponse]
+    payments: list[PaymentResponse]
     created_at: datetime
     updated_at: datetime
 
@@ -314,17 +393,6 @@ class SaleItemResponse(BaseModel):
     gst_amount: Decimal
 
 
-class PaymentResponse(BaseModel):
-    payment_id: UUID
-    amount: Decimal
-    payment_date: date
-    payment_method: str
-    reference: str | None
-    note: str | None
-    status: Literal["recorded", "void"]
-    void_reason: str | None
-
-
 class SaleResponse(BaseModel):
     sale_id: UUID
     shop_id: UUID
@@ -343,6 +411,88 @@ class SaleResponse(BaseModel):
     payment_status: Literal["unpaid", "partially_paid", "paid", "void"]
     items: list[SaleItemResponse]
     payments: list[PaymentResponse]
+
+
+class SaleInvoiceResponse(BaseModel):
+    shop_name: str
+    shop_phone: str | None
+    shop_address: str | None
+    shop_gstin: str | None
+    customer_name: str
+    customer_phone: str | None
+    customer_address: str | None
+    customer_gstin: str | None
+    sale: SaleResponse
+
+
+class CustomerLedgerResponse(BaseModel):
+    customer_id: UUID
+    customer_name: str
+    total_invoiced: Decimal
+    total_paid: Decimal
+    outstanding_amount: Decimal
+    sales: list[SaleResponse]
+
+
+class SupplierLedgerResponse(BaseModel):
+    supplier_id: UUID
+    supplier_name: str
+    total_received: Decimal
+    total_paid: Decimal
+    outstanding_amount: Decimal
+    purchases: list[PurchaseResponse]
+
+
+class DashboardSaleSummaryResponse(BaseModel):
+    sale_id: UUID
+    invoice_number: str
+    sale_date: date
+    customer_name: str
+    total_amount: Decimal
+
+
+class DashboardStockSummaryResponse(BaseModel):
+    product_id: UUID
+    name: str
+    part_number: str
+    unit: str
+    quantity_on_hand: int
+
+
+class DashboardSummaryResponse(BaseModel):
+    today_sales_total: Decimal
+    today_bill_count: int
+    low_stock_threshold: int
+    low_stock_count: int
+    low_stock_products: list[DashboardStockSummaryResponse]
+    recent_sales: list[DashboardSaleSummaryResponse]
+
+
+class ProductSalesSummaryResponse(BaseModel):
+    product_name: str
+    part_number: str
+    quantity_sold: int
+    sales_total: Decimal
+
+
+class ReportsSummaryResponse(BaseModel):
+    start_date: date
+    end_date: date
+    sales_count: int
+    sales_total: Decimal
+    sales_payments_received: Decimal
+    purchase_count: int
+    purchases_total: Decimal
+    supplier_payments_made: Decimal
+    customer_outstanding: Decimal
+    supplier_outstanding: Decimal
+    top_products: list[ProductSalesSummaryResponse]
+
+
+class PaymentVoidResponse(BaseModel):
+    payment: PaymentResponse
+    transaction_type: Literal["sale", "purchase"]
+    transaction_id: UUID
 
 
 class ShopContextResponse(BaseModel):

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../../contexts/useAuth";
 import { apiRequest } from "../../../lib/api";
@@ -6,10 +7,11 @@ import { useProducts } from "../../../lib/useProducts";
 import BillSummary from "./components/BillSummary";
 import Cart from "./components/Cart";
 import CustomerSection from "./components/CustomerSection";
-import PaymentModal from "./components/PaymentModal";
+import PaymentModal from "../shared/PaymentCollectionModal";
 import ProductSearch from "./components/ProductSearch";
 
 function Sales() {
+  const navigate = useNavigate();
   const { activeShopId } = useAuth();
   const {
     products,
@@ -204,40 +206,6 @@ function Sales() {
     }
   };
 
-  const voidPayment = async (payment) => {
-    const reason = window.prompt("Why is this payment being reversed?");
-    if (reason === null) return;
-    if (!reason.trim()) {
-      setHistoryError("A reason is required to reverse a payment.");
-      return;
-    }
-    setHistoryError("");
-    try {
-      await apiRequest(`/payments/${payment.payment_id}/void`, {
-        method: "POST",
-        shopId: activeShopId,
-        body: JSON.stringify({ reason }),
-      });
-      await refreshShopData();
-    } catch (requestError) {
-      setHistoryError(requestError.message);
-    }
-  };
-
-  const voidSale = async (sale) => {
-    if (!window.confirm(`Void sale ${sale.invoice_number}?`)) return;
-    setHistoryError("");
-    try {
-      await apiRequest(`/sales/${sale.sale_id}/void`, {
-        method: "POST",
-        shopId: activeShopId,
-      });
-      await refreshShopData();
-    } catch (requestError) {
-      setHistoryError(requestError.message);
-    }
-  };
-
   const visibleSales = loadedShopId === activeShopId ? sales : [];
   const visibleCustomers = loadedShopId === activeShopId ? customers : [];
   const isLoadingHistory = Boolean(activeShopId) && loadedShopId !== activeShopId;
@@ -306,7 +274,7 @@ function Sales() {
         <div className="border-b border-slate-200 px-5 py-4">
           <h3 className="text-sm font-semibold text-slate-900">Sales history</h3>
           <p className="mt-1 text-xs text-slate-500">
-            Payments are listed individually. Reverse recorded payments before voiding a sale.
+            View invoices and payments, or record a remaining balance.
           </p>
         </div>
         {historyError && (
@@ -340,9 +308,6 @@ function Sales() {
                 </tr>
               ) : (
                 visibleSales.map((sale) => {
-                  const hasRecordedPayments = sale.payments.some(
-                    (payment) => payment.status === "recorded",
-                  );
                   return (
                     <tr
                       key={sale.sale_id}
@@ -374,7 +339,7 @@ function Sales() {
                       <td className="px-4 py-3">
                         <span className="rounded-full bg-slate-100 px-2 py-1 text-xs capitalize">
                           {sale.status === "void"
-                            ? "void"
+                            ? "Cancelled"
                             : sale.payment_status.replace("_", " ")}
                         </span>
                       </td>
@@ -394,24 +359,14 @@ function Sales() {
                                     {payment.payment_method.replace("_", " ")}
                                   </span>{" "}
                                   <span className="text-slate-500">
-                                    ({payment.status})
+                                    ({payment.status === "void" ? "Reversed" : "Recorded"})
                                   </span>
                                   {payment.void_reason && (
                                     <p className="text-slate-500">
-                                      {payment.void_reason}
+                                      Reason: {payment.void_reason}
                                     </p>
                                   )}
                                 </div>
-                                {payment.status === "recorded" &&
-                                  sale.status === "completed" && (
-                                    <button
-                                      type="button"
-                                      onClick={() => voidPayment(payment)}
-                                      className="whitespace-nowrap text-red-700 hover:underline"
-                                    >
-                                      Reverse payment
-                                    </button>
-                                  )}
                               </div>
                             ))}
                           </div>
@@ -420,9 +375,18 @@ function Sales() {
                             No payments recorded
                           </span>
                         )}
-                        {sale.status === "completed" && (
-                          <div className="mt-3 flex flex-wrap gap-3">
-                            {Number(sale.outstanding_amount) > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(`/sales/${sale.sale_id}/invoice`)
+                            }
+                            className="text-xs font-medium text-slate-700 hover:underline"
+                          >
+                            {sale.status === "void" ? "Print cancelled invoice" : "Print invoice"}
+                          </button>
+                          {sale.status === "completed" &&
+                            Number(sale.outstanding_amount) > 0 && (
                               <button
                                 type="button"
                                 onClick={() => openPaymentDialog(sale)}
@@ -431,21 +395,7 @@ function Sales() {
                                 Record payment
                               </button>
                             )}
-                            <button
-                              type="button"
-                              disabled={hasRecordedPayments}
-                              title={
-                                hasRecordedPayments
-                                  ? "Reverse all recorded payments first."
-                                  : undefined
-                              }
-                              onClick={() => voidSale(sale)}
-                              className="text-xs font-medium text-red-700 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                              Void sale
-                            </button>
-                          </div>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   );

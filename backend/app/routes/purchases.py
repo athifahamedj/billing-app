@@ -11,6 +11,7 @@ from app.auth import get_shop_context
 from app.db.database import get_db
 from app.models import (
     InventoryMovement,
+    Payment,
     Product,
     Purchase,
     PurchaseItem,
@@ -19,9 +20,12 @@ from app.models import (
 )
 from app.schemas import (
     InventoryBalanceResponse,
+    PaymentBatchWrite,
+    PaymentResponse,
     PurchaseItemResponse,
     PurchaseResponse,
     PurchaseWrite,
+    SupplierLedgerResponse,
 )
 
 router = APIRouter(prefix="/api", tags=["purchases and inventory"])
@@ -33,6 +37,35 @@ def _money(value: Decimal) -> Decimal:
 
 
 def _purchase_response(purchase: Purchase) -> PurchaseResponse:
+    payments = sorted(
+        purchase.payments,
+        key=lambda payment: (payment.payment_date, payment.created_at),
+    )
+    paid_amount = _money(
+        sum(
+            (
+                payment.amount
+                for payment in payments
+                if payment.status == "recorded"
+            ),
+            Decimal("0"),
+        )
+    )
+    if purchase.status == "draft":
+        outstanding_amount = Decimal("0.00")
+        payment_status = "draft"
+    elif purchase.status == "void":
+        outstanding_amount = Decimal("0.00")
+        payment_status = "void"
+    else:
+        outstanding_amount = _money(purchase.total_amount - paid_amount)
+        payment_status = (
+            "paid"
+            if outstanding_amount == 0
+            else "partially_paid"
+            if paid_amount > 0
+            else "unpaid"
+        )
     return PurchaseResponse(
         purchase_id=purchase.purchase_id,
         shop_id=purchase.shop_id,
@@ -46,6 +79,9 @@ def _purchase_response(purchase: Purchase) -> PurchaseResponse:
         gst_amount=purchase.gst_amount,
         total_amount=purchase.total_amount,
         status=purchase.status,
+        paid_amount=paid_amount,
+        outstanding_amount=outstanding_amount,
+        payment_status=payment_status,
         items=[
             PurchaseItemResponse(
                 purchase_item_id=item.purchase_item_id,
@@ -60,6 +96,10 @@ def _purchase_response(purchase: Purchase) -> PurchaseResponse:
             )
             for item in purchase.items
         ],
+        payments=[
+            PaymentResponse.model_validate(payment)
+            for payment in payments
+        ],
         created_at=purchase.created_at,
         updated_at=purchase.updated_at,
     )
@@ -71,6 +111,7 @@ def _purchase_query(shop_id: UUID):
         .options(
             selectinload(Purchase.supplier),
             selectinload(Purchase.items),
+            selectinload(Purchase.payments),
         )
         .where(Purchase.shop_id == shop_id)
     )
@@ -289,6 +330,12 @@ def void_purchase(
             detail="The purchase is already void.",
         )
 
+    if any(payment.status == "recorded" for payment in purchase.payments):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Void or reverse the recorded supplier payment first.",
+        )
+
     if purchase.status == "received":
         product_ids = sorted({item.product_id for item in purchase.items}, key=str)
         list(
@@ -357,6 +404,144 @@ def void_purchase(
     session.commit()
     session.refresh(purchase)
     return _purchase_response(purchase)
+
+
+@router.post(
+    "/purchases/{purchase_id}/payments",
+    response_model=PurchaseResponse,
+)
+def add_purchase_payments(
+    purchase_id: UUID,
+    payment_data: PaymentBatchWrite,
+    shop: Annotated[Shop, Depends(get_shop_context)],
+    session: Session = Depends(get_db),
+) -> PurchaseResponse:
+    purchase = session.scalar(
+        select(Purchase)
+        .where(
+            Purchase.shop_id == shop.shop_id,
+            Purchase.purchase_id == purchase_id,
+        )
+        .with_for_update()
+    )
+    if purchase is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The purchase was not found.",
+        )
+    if purchase.status != "received":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Payments can only be added to a received purchase.",
+        )
+
+    paid_amount = session.scalar(
+        select(func.coalesce(func.sum(Payment.amount), 0)).where(
+            Payment.shop_id == shop.shop_id,
+            Payment.purchase_id == purchase_id,
+            Payment.status == "recorded",
+        )
+    )
+    incoming_amount = _money(
+        sum(
+            (payment.amount for payment in payment_data.payments),
+            Decimal("0"),
+        )
+    )
+    outstanding = _money(purchase.total_amount - paid_amount)
+    if incoming_amount > outstanding:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                "Payments cannot exceed the outstanding amount "
+                f"of {outstanding}."
+            ),
+        )
+
+    session.add_all(
+        [
+            Payment(
+                shop_id=shop.shop_id,
+                purchase_id=purchase.purchase_id,
+                amount=payment.amount,
+                payment_date=payment.payment_date,
+                payment_method=payment.payment_method,
+                reference=payment.reference,
+                note=payment.note,
+                status="recorded",
+            )
+            for payment in payment_data.payments
+        ]
+    )
+    session.commit()
+    updated_purchase = session.scalar(
+        _purchase_query(shop.shop_id).where(
+            Purchase.purchase_id == purchase_id
+        )
+    )
+    return _purchase_response(updated_purchase)
+
+
+@router.get(
+    "/suppliers/{supplier_id}/ledger",
+    response_model=SupplierLedgerResponse,
+)
+def get_supplier_ledger(
+    supplier_id: UUID,
+    shop: Annotated[Shop, Depends(get_shop_context)],
+    session: Session = Depends(get_db),
+) -> SupplierLedgerResponse:
+    supplier = session.scalar(
+        select(Supplier).where(
+            Supplier.shop_id == shop.shop_id,
+            Supplier.supplier_id == supplier_id,
+        )
+    )
+    if supplier is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The supplier was not found.",
+        )
+    supplier_purchases = list(
+        session.scalars(
+            _purchase_query(shop.shop_id)
+            .where(Purchase.supplier_id == supplier_id)
+            .order_by(Purchase.purchase_date.desc(), Purchase.created_at.desc())
+        )
+    )
+    total_received = _money(
+        sum(
+            (
+                purchase.total_amount
+                for purchase in supplier_purchases
+                if purchase.status == "received"
+            ),
+            Decimal("0"),
+        )
+    )
+    total_paid = _money(
+        sum(
+            (
+                payment.amount
+                for purchase in supplier_purchases
+                if purchase.status == "received"
+                for payment in purchase.payments
+                if payment.status == "recorded"
+            ),
+            Decimal("0"),
+        )
+    )
+    return SupplierLedgerResponse(
+        supplier_id=supplier.supplier_id,
+        supplier_name=supplier.name,
+        total_received=total_received,
+        total_paid=total_paid,
+        outstanding_amount=_money(total_received - total_paid),
+        purchases=[
+            _purchase_response(purchase)
+            for purchase in supplier_purchases
+        ],
+    )
 
 
 @router.get("/inventory", response_model=list[InventoryBalanceResponse])

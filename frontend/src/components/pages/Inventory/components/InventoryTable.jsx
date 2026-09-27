@@ -1,6 +1,6 @@
-import { Ban, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 
-function InventoryTable({ products, isLoading, onEdit, onDeactivate }) {
+function InventoryTable({ products, isLoading, onEdit }) {
   return (
     <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
       <div className="overflow-x-auto">
@@ -14,7 +14,7 @@ function InventoryTable({ products, isLoading, onEdit, onDeactivate }) {
               <th className="px-3 py-3 font-medium">MRP</th>
               <th className="px-3 py-3 font-medium">Purchase Price</th>
               <th className="px-3 py-3 font-medium">Selling Price</th>
-              <th className="px-3 py-3 font-medium">Status / Actions</th>
+              <th className="px-3 py-3 font-medium">Actions</th>
             </tr>
           </thead>
 
@@ -84,14 +84,6 @@ function InventoryTable({ products, isLoading, onEdit, onDeactivate }) {
                           className="rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                         >
                           <Pencil size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          aria-label={`Deactivate ${product.name}`}
-                          onClick={() => onDeactivate(product)}
-                          className="rounded p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700"
-                        >
-                          <Ban size={15} />
                         </button>
                       </div>
                     ) : (

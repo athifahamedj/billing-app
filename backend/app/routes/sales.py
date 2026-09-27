@@ -14,16 +14,20 @@ from app.models import (
     InventoryMovement,
     Payment,
     Product,
+    Purchase,
     Sale,
     SaleItem,
     Shop,
 )
 from app.schemas import (
+    CustomerLedgerResponse,
     PaymentBatchWrite,
     PaymentResponse,
+    PaymentVoidResponse,
     PaymentVoidWrite,
     PaymentWrite,
     SaleItemResponse,
+    SaleInvoiceResponse,
     SaleResponse,
     SaleWrite,
 )
@@ -213,6 +217,103 @@ def list_sales(
     return [_sale_response(sale) for sale in sales]
 
 
+@router.get(
+    "/customers/{customer_id}/ledger",
+    response_model=CustomerLedgerResponse,
+)
+def get_customer_ledger(
+    customer_id: UUID,
+    shop: Annotated[Shop, Depends(get_shop_context)],
+    session: Session = Depends(get_db),
+) -> CustomerLedgerResponse:
+    customer = session.scalar(
+        select(Customer).where(
+            Customer.shop_id == shop.shop_id,
+            Customer.customer_id == customer_id,
+        )
+    )
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The customer was not found.",
+        )
+
+    customer_sales = list(
+        session.scalars(
+            _sale_query(shop.shop_id)
+            .where(Sale.customer_id == customer_id)
+            .order_by(Sale.sale_date.desc(), Sale.created_at.desc())
+        )
+    )
+    total_invoiced = _money(
+        sum(
+            (
+                sale.total_amount
+                for sale in customer_sales
+                if sale.status == "completed"
+            ),
+            Decimal("0"),
+        )
+    )
+    total_paid = _money(
+        sum(
+            (
+                payment.amount
+                for sale in customer_sales
+                if sale.status == "completed"
+                for payment in sale.payments
+                if payment.status == "recorded"
+            ),
+            Decimal("0"),
+        )
+    )
+    sales = [_sale_response(sale) for sale in customer_sales]
+    outstanding_amount = _money(total_invoiced - total_paid)
+
+    return CustomerLedgerResponse(
+        customer_id=customer.customer_id,
+        customer_name=customer.name,
+        total_invoiced=total_invoiced,
+        total_paid=total_paid,
+        outstanding_amount=outstanding_amount,
+        sales=sales,
+    )
+
+
+@router.get(
+    "/sales/{sale_id}/invoice",
+    response_model=SaleInvoiceResponse,
+)
+def get_sale_invoice(
+    sale_id: UUID,
+    shop: Annotated[Shop, Depends(get_shop_context)],
+    session: Session = Depends(get_db),
+) -> SaleInvoiceResponse:
+    sale = _load_sale(session, shop.shop_id, sale_id)
+    if sale is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The sale was not found.",
+        )
+    if sale.status == "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A draft sale does not have an invoice.",
+        )
+
+    return SaleInvoiceResponse(
+        shop_name=shop.name,
+        shop_phone=shop.phone,
+        shop_address=shop.address,
+        shop_gstin=shop.gstin,
+        customer_name=sale.customer.name if sale.customer else "Walk-in customer",
+        customer_phone=sale.customer.phone if sale.customer else None,
+        customer_address=sale.customer.address if sale.customer else None,
+        customer_gstin=sale.customer.gstin if sale.customer else None,
+        sale=_sale_response(sale),
+    )
+
+
 @router.post(
     "/sales",
     response_model=SaleResponse,
@@ -400,19 +501,18 @@ def add_sale_payments(
 
 @router.post(
     "/payments/{payment_id}/void",
-    response_model=SaleResponse,
+    response_model=PaymentVoidResponse,
 )
 def void_payment(
     payment_id: UUID,
     void_data: PaymentVoidWrite,
     shop: Annotated[Shop, Depends(get_shop_context)],
     session: Session = Depends(get_db),
-) -> SaleResponse:
+) -> PaymentVoidResponse:
     payment = session.scalar(
         select(Payment).where(
             Payment.shop_id == shop.shop_id,
             Payment.payment_id == payment_id,
-            Payment.sale_id.is_not(None),
         )
     )
     if payment is None:
@@ -421,19 +521,54 @@ def void_payment(
             detail="The payment was not found.",
         )
 
-    sale = session.scalar(
-        select(Sale)
-        .where(
-            Sale.shop_id == shop.shop_id,
-            Sale.sale_id == payment.sale_id,
+    if payment.sale_id is not None:
+        transaction_type = "sale"
+        transaction_id = payment.sale_id
+        sale = session.scalar(
+            select(Sale)
+            .where(
+                Sale.shop_id == shop.shop_id,
+                Sale.sale_id == transaction_id,
+            )
+            .with_for_update()
         )
-        .with_for_update()
-    )
-    if sale is None:
+        if sale is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="The sale was not found.",
+            )
+        if sale.status != "completed":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Payments can only be voided on a completed sale.",
+            )
+    elif payment.purchase_id is not None:
+        transaction_type = "purchase"
+        transaction_id = payment.purchase_id
+        purchase = session.scalar(
+            select(Purchase)
+            .where(
+                Purchase.shop_id == shop.shop_id,
+                Purchase.purchase_id == transaction_id,
+            )
+            .with_for_update()
+        )
+        if purchase is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="The purchase was not found.",
+            )
+        if purchase.status != "received":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Payments can only be voided on a received purchase.",
+            )
+    else:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="The sale was not found.",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The payment is not associated with a transaction.",
         )
+
     payment = session.scalar(
         select(Payment)
         .where(
@@ -442,11 +577,6 @@ def void_payment(
         )
         .with_for_update()
     )
-    if sale.status != "completed":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Payments can only be voided on a completed sale.",
-        )
     if payment.status != "recorded":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -456,8 +586,11 @@ def void_payment(
     payment.status = "void"
     payment.void_reason = void_data.reason
     session.commit()
-    updated_sale = _load_sale(session, shop.shop_id, sale.sale_id)
-    return _sale_response(updated_sale)
+    return PaymentVoidResponse(
+        payment=PaymentResponse.model_validate(payment),
+        transaction_type=transaction_type,
+        transaction_id=transaction_id,
+    )
 
 
 @router.post(

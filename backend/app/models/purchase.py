@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     CheckConstraint,
@@ -19,6 +20,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
+
+if TYPE_CHECKING:
+    from app.models.payment import Payment
 
 
 class Purchase(Base):
@@ -88,6 +92,10 @@ class Purchase(Base):
     items: Mapped[list["PurchaseItem"]] = relationship(
         cascade="all, delete-orphan",
         order_by="PurchaseItem.created_at",
+    )
+    payments: Mapped[list["Payment"]] = relationship(
+        back_populates="purchase",
+        foreign_keys="Payment.purchase_id",
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

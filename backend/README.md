@@ -21,6 +21,17 @@ Create a global super-admin account:
 .\venv\Scripts\python.exe -m scripts.create_super_admin
 ```
 
+Reset an existing account's password without displaying or storing it in
+plain text:
+
+```powershell
+.\venv\Scripts\python.exe -m scripts.set_password
+```
+
+Enter the username (or accept the `admin123` default), then enter and confirm a
+new password at the hidden prompts. This updates only that account's password
+hash; it does not create an account or change its role or shop.
+
 The script asks for the shop slug, username, display name, and password.
 Password input is hidden and passwords are stored only as Argon2 hashes.
 Usernames are unique across all shops.
@@ -54,6 +65,13 @@ On-hand stock is calculated from movement history at `GET /api/inventory`.
 All API writes require a same-origin or explicitly trusted `Origin` and the
 frontend's `X-CSRF-Protection` header.
 
+Payments can also be recorded against received purchases using the supported
+payment methods. Supplier balances are derived from received, non-void
+purchases and their recorded payments at
+`GET /api/suppliers/{supplier_id}/ledger`. Payments cannot exceed the purchase
+balance. Reverse recorded supplier payments before voiding a purchase; purchase
+voiding still checks that enough stock remains to reverse its receipt.
+
 Sales are completed as one transaction: the API prices active products using
 their configured selling price and GST, checks and locks available stock,
 records sale items, and posts negative inventory movements. A sale can have no
@@ -63,8 +81,24 @@ amounts and payment status are derived from non-void payments. Additional
 payments cannot exceed the outstanding balance. To void a sale, first reverse
 each recorded payment; the sale void then posts positive stock-reversal
 movements to restore the sold quantities.
+Completed and void sale invoices are available from the shop-scoped
+`GET /api/sales/{sale_id}/invoice` endpoint and can be printed or saved as PDF
+from the Sales page.
 Sales and payments are shop-scoped and use the same CSRF protection as other
 write endpoints.
+
+The dashboard summary is available at `GET /api/dashboard/summary` and shows
+today's completed sales, the five most recent completed sales, and active
+products with five or fewer units on hand. Date-range reports are available at
+`GET /api/reports/summary?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`. Sales and
+received purchases are grouped by invoice date; recorded payment totals use
+payment date. Customer and supplier outstanding figures are current all-time
+balances. Dashboard and report queries are scoped to the selected shop.
+Shop settings load and save through `GET /api/settings` and `PUT /api/settings`.
+Business name, phone, address, and GSTIN update the selected shop profile;
+billing, invoice-display, inventory-alert, and invoice-prefix preferences are
+stored in that shop's existing `shop_settings` record. Settings writes use the
+same CSRF and shop-isolation protections as other writes.
 
 Seed the 15 starter products in `scripts/data/products.json` into Manar Motors
 once, or rerun safely to skip existing part numbers:
@@ -73,8 +107,63 @@ once, or rerun safely to skip existing part numbers:
 .\venv\Scripts\python.exe -m scripts.seed_products
 ```
 
+The reviewed full catalog can be imported separately. Supply the source path;
+the default command is a dry run. Review its counts before adding `--apply` to
+commit. This importer is fixed to Manar Motors, updates matching catalog fields
+without changing activation state, and never creates stock or inventory
+movements. It ignores the spreadsheet's `Cost` field and uses `Purchase Rate`
+for `purchase_price`.
+
+```powershell
+$catalogPath = Read-Host "Path to the reviewed product catalog"
+.\venv\Scripts\python.exe -m scripts.import_product_catalog $catalogPath
+.\venv\Scripts\python.exe -m scripts.import_product_catalog $catalogPath --apply
+```
+
 Run the rollback-only two-shop integration tests from this directory:
 
 ```powershell
 .\venv\Scripts\python.exe -m unittest -v tests.test_auth
 ```
+
+## Production launch checklist
+
+- Store `DATABASE_URL`, `AUTH_SECRET_KEY`, `AUTH_COOKIE_SECURE=true`, and the
+  exact HTTPS frontend origins in the deployment platform's secret manager.
+  Never reuse the example key or commit a populated `.env` file.
+- Serve the frontend and API on the same site, preferably with the frontend
+  proxying `/api` to the API. If a reverse proxy terminates TLS, forward the
+  original scheme in `X-Forwarded-Proto`.
+- Build the frontend with `npm run build`. Configure the static host to serve
+  the SPA entry point for application routes.
+- Take a verified database backup, then run
+  `.\venv\Scripts\python.exe -m alembic upgrade head` once as a release
+  migration step before starting the API workers. Do not run migrations from
+  every worker's startup hook.
+- Configure the platform's readiness probe to request `GET /health`. It
+  returns `{"status":"ok"}` only after the database connection succeeds.
+- Run a two-shop login, tenant-isolation, invoice-print, and payment-reversal
+  smoke test against staging before releasing.
+- Schedule encrypted PostgreSQL backups outside the application host, monitor
+  backup success, and periodically verify restoration into a separate
+  non-production database.
+
+For a manual PowerShell backup, set `DATABASE_URL` from the deployment
+secret manager and choose a protected backup destination:
+
+```powershell
+$env:BACKUP_FILE = "D:\protected-backups\billing.dump"
+pg_dump --format=custom --file=$env:BACKUP_FILE $env:DATABASE_URL
+```
+
+Restore only into a disposable or explicitly approved target database; the
+`--clean` option removes existing objects in that target:
+
+```powershell
+# Set RESTORE_DATABASE_URL to the approved restore target from the secret manager.
+pg_restore --clean --if-exists --dbname=$env:RESTORE_DATABASE_URL $env:BACKUP_FILE
+```
+
+Provider-specific deployment resources and production credentials are not
+configured in this repository. Select a hosting provider and provision its
+database, secret storage, TLS, and backup retention before public launch.

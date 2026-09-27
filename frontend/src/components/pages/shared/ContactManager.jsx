@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Ban, Pencil, Plus, Search, X } from "lucide-react";
+import { Pencil, Plus, Search, X } from "lucide-react";
 
 import { useAuth } from "../../../contexts/useAuth";
 import { apiRequest } from "../../../lib/api";
+import CustomerLedger from "../Customers/CustomerLedger";
+import SupplierLedger from "../Suppliers/SupplierLedger";
 
 function ContactForm({ config, record, onClose, onSave }) {
   const [values, setValues] = useState(() =>
@@ -149,8 +151,8 @@ function ContactManager({ config }) {
     records: [],
   });
   const [search, setSearch] = useState("");
-  const [includeInactive, setIncludeInactive] = useState(false);
   const [editingRecord, setEditingRecord] = useState(undefined);
+  const [ledgerCustomer, setLedgerCustomer] = useState(null);
   const [loadingShopId, setLoadingShopId] = useState(null);
   const [loadedShopId, setLoadedShopId] = useState(null);
   const [error, setError] = useState("");
@@ -167,7 +169,6 @@ function ContactManager({ config }) {
       try {
         const params = new URLSearchParams();
         if (search.trim()) params.set("q", search.trim());
-        if (includeInactive) params.set("include_inactive", "true");
         const suffix = params.size ? `?${params.toString()}` : "";
         const result = await apiRequest(`/${config.endpoint}${suffix}`, {
           shopId: activeShopId,
@@ -185,7 +186,7 @@ function ContactManager({ config }) {
         if (!signal?.aborted) setLoadingShopId(null);
       }
     },
-    [activeShopId, config.endpoint, includeInactive, search],
+    [activeShopId, config.endpoint, search],
   );
 
   useEffect(() => {
@@ -214,20 +215,6 @@ function ContactManager({ config }) {
     );
     setEditingRecord(undefined);
     await loadRecords();
-  };
-
-  const deactivateRecord = async (record) => {
-    if (!window.confirm(`Deactivate "${record.name}"?`)) return;
-    setError("");
-    try {
-      await apiRequest(
-        `/${config.endpoint}/${record[config.idField]}`,
-        { method: "DELETE", shopId: activeShopId },
-      );
-      await loadRecords();
-    } catch (requestError) {
-      setError(requestError.message);
-    }
   };
 
   const isLoading =
@@ -273,15 +260,6 @@ function ContactManager({ config }) {
               className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none placeholder:text-slate-400 focus:border-slate-400 focus:bg-white"
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-slate-600">
-            <input
-              type="checkbox"
-              checked={includeInactive}
-              onChange={(event) => setIncludeInactive(event.target.checked)}
-              className="rounded border-slate-300"
-            />
-            Show deactivated
-          </label>
         </div>
       </section>
 
@@ -301,14 +279,19 @@ function ContactManager({ config }) {
                     {column.label}
                   </th>
                 ))}
-                <th className="px-4 py-3 font-medium">Status / Actions</th>
+                {config.ledgerType && (
+                  <th className="px-4 py-3 font-medium">Ledger</th>
+                )}
+                <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={config.columns.length + 1}
+                    colSpan={
+                      config.columns.length + 1 + (config.ledgerType ? 1 : 0)
+                    }
                     className="px-5 py-10 text-center text-slate-500"
                   >
                     Loading {config.title.toLowerCase()}…
@@ -317,7 +300,9 @@ function ContactManager({ config }) {
               ) : records.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={config.columns.length + 1}
+                    colSpan={
+                      config.columns.length + 1 + (config.ledgerType ? 1 : 0)
+                    }
                     className="px-5 py-10 text-center text-slate-500"
                   >
                     No {config.title.toLowerCase()} found.
@@ -337,6 +322,17 @@ function ContactManager({ config }) {
                         {record[column.name] || "—"}
                       </td>
                     ))}
+                    {config.ledgerType && (
+                      <td className="px-4 py-4">
+                        <button
+                          type="button"
+                          onClick={() => setLedgerCustomer(record)}
+                          className="text-sm font-medium text-blue-700 hover:underline"
+                        >
+                          View ledger
+                        </button>
+                      </td>
+                    )}
                     <td className="px-4 py-4">
                       {record.is_active ? (
                         <div className="flex items-center gap-2">
@@ -350,14 +346,6 @@ function ContactManager({ config }) {
                             className="rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                           >
                             <Pencil size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={`Deactivate ${record.name}`}
-                            onClick={() => deactivateRecord(record)}
-                            className="rounded p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700"
-                          >
-                            <Ban size={15} />
                           </button>
                         </div>
                       ) : (
@@ -380,6 +368,18 @@ function ContactManager({ config }) {
           record={editingRecord}
           onClose={() => setEditingRecord(undefined)}
           onSave={saveRecord}
+        />
+      )}
+      {ledgerCustomer && config.ledgerType === "customer" && (
+        <CustomerLedger
+          customer={ledgerCustomer}
+          onClose={() => setLedgerCustomer(null)}
+        />
+      )}
+      {ledgerCustomer && config.ledgerType === "supplier" && (
+        <SupplierLedger
+          supplier={ledgerCustomer}
+          onClose={() => setLedgerCustomer(null)}
         />
       )}
     </div>

@@ -10,11 +10,12 @@ const PAYMENT_METHODS = [
   ["other", "Other"],
 ];
 
-function PaymentModal({
+function PaymentCollectionModal({
   total,
   onClose,
   onConfirm,
   title = "Complete Sale",
+  totalLabel = "Sale total",
   requirePayment = false,
   isSaving = false,
   error = "",
@@ -77,7 +78,7 @@ function PaymentModal({
         <div className="space-y-5 p-5">
           <div className="rounded-md bg-slate-50 px-4 py-4">
             <p className="text-xs text-slate-500">
-              {requirePayment ? "Outstanding amount" : "Sale total"}
+              {requirePayment ? "Outstanding amount" : totalLabel}
             </p>
             <p className="mt-1 text-2xl font-semibold text-slate-900">
               ₹{total.toFixed(2)}
@@ -203,4 +204,4 @@ function PaymentModal({
   );
 }
 
-export default PaymentModal;
+export default PaymentCollectionModal;
