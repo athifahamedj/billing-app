@@ -1,3 +1,5 @@
+const API_BASE_URL = "/api";
+
 export class ApiError extends Error {
   constructor(message, status) {
     super(message);
@@ -22,7 +24,7 @@ export async function apiRequest(path, { shopId, ...options } = {}) {
     headers.set("X-Shop-ID", shopId);
   }
 
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
     credentials: "include",

@@ -17,8 +17,17 @@ from app.models import Shop, User
 from app.schemas import LoginRequest, ShopResponse, UserResponse
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
+
 password_hasher = PasswordHash.recommended()
 _dummy_password_hash = password_hasher.hash("invalid-account-password")
+
+
+def _secure_cookie_enabled() -> bool:
+    return os.getenv("AUTH_COOKIE_SECURE", "true").lower() in {
+        "true",
+        "1",
+        "yes",
+    }
 
 
 def _user_response(user: User, shop: Shop | None) -> UserResponse:
@@ -39,10 +48,21 @@ def login(
     session: Session = Depends(get_db),
 ) -> UserResponse:
     username = credentials.username.strip().lower()
-    user = session.scalar(select(User).where(User.username == username))
-    password_hash = user.password_hash if user else _dummy_password_hash
 
-    if not password_hasher.verify(credentials.password, password_hash):
+    user = session.scalar(
+        select(User).where(User.username == username)
+    )
+
+    password_hash = (
+        user.password_hash
+        if user
+        else _dummy_password_hash
+    )
+
+    if not password_hasher.verify(
+        credentials.password,
+        password_hash,
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password.",
@@ -54,38 +74,44 @@ def login(
             detail="Invalid username or password.",
         )
 
-    shop = session.get(Shop, user.shop_id) if user.shop_id else None
-    if user.role == "shop_user" and (shop is None or not shop.is_active):
+    shop = (
+        session.get(Shop, user.shop_id)
+        if user.shop_id
+        else None
+    )
+
+    if user.role == "shop_user" and (
+        shop is None or not shop.is_active
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password.",
         )
 
-    secure_cookie = os.getenv("AUTH_COOKIE_SECURE", "false").lower() in {
-        "true",
-        "1",
-        "yes",
-    }
+    secure_cookie = _secure_cookie_enabled()
+
     response.set_cookie(
         key=ACCESS_COOKIE_NAME,
         value=create_access_token(user.user_id),
         max_age=int(ACCESS_TOKEN_LIFETIME.total_seconds()),
         httponly=True,
         secure=secure_cookie,
-        samesite="lax",
+        samesite="none" if secure_cookie else "lax",
         path="/api",
     )
+
     return _user_response(user, shop)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(response: Response) -> None:
+    secure_cookie = _secure_cookie_enabled()
+
     response.delete_cookie(
         key=ACCESS_COOKIE_NAME,
         httponly=True,
-        secure=os.getenv("AUTH_COOKIE_SECURE", "false").lower()
-        in {"true", "1", "yes"},
-        samesite="lax",
+        secure=secure_cookie,
+        samesite="none" if secure_cookie else "lax",
         path="/api",
     )
 
@@ -95,7 +121,12 @@ def current_user(
     user: Annotated[User, Depends(get_current_user)],
     session: Session = Depends(get_db),
 ) -> UserResponse:
-    shop = session.get(Shop, user.shop_id) if user.shop_id else None
+    shop = (
+        session.get(Shop, user.shop_id)
+        if user.shop_id
+        else None
+    )
+
     return _user_response(user, shop)
 
 
@@ -104,13 +135,25 @@ def accessible_shops(
     user: Annotated[User, Depends(get_current_user)],
     session: Session = Depends(get_db),
 ) -> list[ShopResponse]:
-    query = select(Shop).where(Shop.is_active.is_(True)).order_by(Shop.name)
+    query = (
+        select(Shop)
+        .where(Shop.is_active.is_(True))
+        .order_by(Shop.name)
+    )
+
     if user.role == "shop_user":
         if user.shop_id is None:
             return []
-        query = query.where(Shop.shop_id == user.shop_id)
+
+        query = query.where(
+            Shop.shop_id == user.shop_id
+        )
 
     return [
-        ShopResponse(shop_id=shop.shop_id, name=shop.name, slug=shop.slug)
+        ShopResponse(
+            shop_id=shop.shop_id,
+            name=shop.name,
+            slug=shop.slug,
+        )
         for shop in session.scalars(query)
     ]

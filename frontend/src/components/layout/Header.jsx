@@ -15,7 +15,7 @@ function Header() {
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
-            MM
+            Hey
           </div>
 
           <div>
